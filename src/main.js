@@ -648,7 +648,7 @@ function renderHeader() {
         ${navLink("/user/orders.html", "Orders", "orders")}
         ${navLink("/admin/cache.html", "Cache", "cache")}
       </nav>
-      ${isSignedIn() ? `<button class="user-button" type="button" data-action="sign-out" title="Sign out">${escapeHtml(currentUserEmail())}</button>` : `<a class="user-button" href="/login.html">Login</a>`}
+      ${isSignedIn() ? `<div class="account-actions"><span class="user-email" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button></div>` : `<a class="user-button" href="/login.html">Login</a>`}
     </header>
   `;
 }

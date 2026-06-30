@@ -150,7 +150,9 @@ img {
 }
 
 .nav-link,
-.user-button {
+.user-button,
+.logout-button,
+.user-email {
   min-height: 36px;
   border-radius: 4px;
   padding: 8px 10px;
@@ -161,7 +163,8 @@ img {
 
 .nav-link.active,
 .nav-link:hover,
-.user-button:hover {
+.user-button:hover,
+.logout-button:hover {
   background: rgba(255, 255, 255, 0.16);
 }
 
@@ -171,6 +174,31 @@ img {
   background: transparent;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.user-email {
+  max-width: 180px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-button {
+  background: #ffffff;
+  color: var(--blue-dark);
+}
+
+.logout-button:hover {
+  background: #fff7d6;
 }
 
 .category-strip {
@@ -1161,7 +1189,8 @@ select {
   }
 
   .main-nav,
-  .user-button {
+  .user-button,
+  .account-actions {
     grid-column: span 1;
   }
 
@@ -1187,6 +1216,7 @@ select {
 
   .main-nav,
   .user-button,
+  .account-actions,
   .toolbar-controls {
     justify-content: stretch;
   }
@@ -1197,9 +1227,16 @@ select {
 
   .nav-link,
   .user-button,
+  .logout-button,
+  .user-email,
   .toolbar-controls .btn,
   .toolbar-controls select {
     width: 100%;
+  }
+
+  .account-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .store-toolbar,
