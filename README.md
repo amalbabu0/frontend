@@ -26,27 +26,6 @@ Vanilla Vite multi-page ecommerce frontend. Pages are separated by role director
 /development/analytics.html         Analytics
 ```
 
-## Legacy Top-Level Pages
-
-The older flat pages are still built for compatibility:
-
-```text
-/index.html
-/login.html
-/cart.html
-/orders.html
-/cache.html
-/user.html
-/owner.html
-/admin.html
-/monitoring.html
-/soc.html
-/system.html
-/web-analytics.html
-/speed-insights.html
-/observability.html
-/analytics.html
-```
 
 ## Env
 
