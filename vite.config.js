@@ -14,7 +14,11 @@ export default defineConfig({
         login: htmlEntry("./login.html"),
         cart: htmlEntry("./cart.html"),
         orders: htmlEntry("./orders.html"),
-        cache: htmlEntry("./cache.html")
+        cache: htmlEntry("./cache.html"),
+        user: htmlEntry("./user.html"),
+        owner: htmlEntry("./owner.html"),
+        admin: htmlEntry("./admin.html"),
+        monitoring: htmlEntry("./monitoring.html")
       }
     }
   }

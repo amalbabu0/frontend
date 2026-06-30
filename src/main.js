@@ -4,7 +4,7 @@ import "./app.css";
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["home", "cart", "orders", "cache"]);
+const protectedPages = new Set(["home", "cart", "orders", "cache", "user", "owner", "admin", "monitoring"]);
 
 const state = {
   authReady: false,
@@ -16,6 +16,7 @@ const state = {
   cart: [],
   orders: [],
   cache: null,
+  health: null,
   productCache: null,
   message: "",
   messageType: "info",
@@ -31,6 +32,7 @@ const state = {
     cart: false,
     orders: false,
     cache: false,
+    health: false,
     action: ""
   }
 };
@@ -301,6 +303,19 @@ async function loadCache() {
   }
 }
 
+async function loadHealth() {
+  state.loading.health = true;
+  render();
+  try {
+    state.health = await apiRequest("/health");
+  } catch (error) {
+    state.health = { ok: false, error: error.message };
+  } finally {
+    state.loading.health = false;
+    render();
+  }
+}
+
 async function loadPageData() {
   if (!isSignedIn()) {
     return;
@@ -315,8 +330,11 @@ async function loadPageData() {
   if (page === "orders") {
     await Promise.all([loadOrders(), loadCache()]);
   }
-  if (page === "cache") {
+  if (page === "cache" || page === "user" || page === "owner" || page === "admin") {
     await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
+  }
+  if (page === "monitoring") {
+    await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache(), loadHealth()]);
   }
 }
 
@@ -529,6 +547,7 @@ async function signOut() {
   state.cart = [];
   state.orders = [];
   state.cache = null;
+  state.health = null;
   window.location.href = "/login.html";
 }
 
@@ -570,11 +589,12 @@ function bottomNavLink(href, icon, label, key, badge = "") {
 
 function renderBottomNav() {
   return `
-    <nav class="bottom-nav" aria-label="Bottom navigation">
-      ${bottomNavLink("/index.html", "H", "Home", "home")}
+    <nav class="bottom-nav module-bottom-nav" aria-label="Module navigation">
+      ${bottomNavLink("/user.html", "U", "User", "user")}
+      ${bottomNavLink("/owner.html", "P", "Owner", "owner")}
+      ${bottomNavLink("/admin.html", "A", "Admin", "admin")}
+      ${bottomNavLink("/monitoring.html", "D", "Dev", "monitoring")}
       ${bottomNavLink("/cart.html", "C", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
-      ${bottomNavLink("/orders.html", "O", "Orders", "orders")}
-      ${bottomNavLink("/cache.html", "K", "Cache", "cache")}
     </nav>
   `;
 }
@@ -591,6 +611,10 @@ function renderHeader() {
       </div>
       <nav class="main-nav" aria-label="Store navigation">
         ${navLink("/index.html", "Home", "home")}
+        ${navLink("/user.html", "User", "user")}
+        ${navLink("/owner.html", "Owner", "owner")}
+        ${navLink("/admin.html", "Admin", "admin")}
+        ${navLink("/monitoring.html", "Dev", "monitoring")}
         ${navLink("/cart.html", `Cart (${cartCount()})`, "cart")}
         ${navLink("/orders.html", "Orders", "orders")}
         ${navLink("/cache.html", "Cache", "cache")}
@@ -826,6 +850,154 @@ function renderCachePage() {
   `;
 }
 
+function statusCount(status) {
+  return state.orders.filter((order) => order.status === status).length;
+}
+
+function lowStockProducts() {
+  return state.products.filter((product) => Number(product.stock || 0) <= 45);
+}
+
+function renderModuleMetric(label, value, note = "") {
+  return `
+    <div class="module-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      ${note ? `<small>${escapeHtml(note)}</small>` : ""}
+    </div>
+  `;
+}
+
+function renderModuleCard(title, body, action = "") {
+  return `
+    <article class="module-card">
+      <div>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${body}</p>
+      </div>
+      ${action}
+    </article>
+  `;
+}
+
+function renderModuleShell(kind, title, description, metrics, content) {
+  return `
+    ${renderHeader()}
+    <main class="module-layout">
+      <section class="module-hero ${kind}">
+        <div>
+          <p class="eyebrow">${escapeHtml(kind.replace("-", " "))} module</p>
+          <h1>${escapeHtml(title)}</h1>
+          <p>${escapeHtml(description)}</p>
+        </div>
+      </section>
+      ${renderMessage()}
+      <section class="module-metrics" aria-label="Module metrics">
+        ${metrics}
+      </section>
+      ${content}
+    </main>
+    ${renderBottomNav()}
+  `;
+}
+
+function renderUserModulePage() {
+  const latestOrder = state.orders[0];
+  const metrics = [
+    renderModuleMetric("Signed in as", currentUserEmail() || "Unknown", "Supabase session"),
+    renderModuleMetric("Cart", `${cartCount()} items`, formatMoney(cartTotalPaise())),
+    renderModuleMetric("Orders", String(state.orders.length), `${statusCount("success")} successful`),
+    renderModuleMetric("Cache", cacheConfigured() ? "Online" : "Check", state.cache?.message || "Waiting")
+  ].join("");
+  const content = `
+    <section class="module-grid two">
+      ${renderModuleCard("Shopping profile", "Manage the customer journey from browsing products to cart and order history.", `<a class="btn primary" href="/index.html">Shop products</a>`)}
+      ${renderModuleCard("Current cart", `${cartCount()} items are saved in this user's Upstash cart cache.`, `<a class="btn ghost" href="/cart.html">Open cart</a>`)}
+      ${renderModuleCard("Latest order", latestOrder ? `${escapeHtml(latestOrder.id)} is currently ${escapeHtml(latestOrder.status)}.` : "No orders created yet.", `<a class="btn ghost" href="/orders.html">View orders</a>`)}
+      ${renderModuleCard("User cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/cache.html">View cache</a>`)}
+    </section>
+  `;
+  return renderModuleShell("user", "User module", "Customer home for account, cart, checkout and order history.", metrics, content);
+}
+
+function renderOwnerModulePage() {
+  const lowStock = lowStockProducts();
+  const categoriesList = categories().filter((category) => category !== "all");
+  const metrics = [
+    renderModuleMetric("Products", String(state.products.length), `${categoriesList.length} departments`),
+    renderModuleMetric("Low stock", String(lowStock.length), "Stock at or below 45"),
+    renderModuleMetric("Product cache", productCacheLabel(), state.productCache?.key || "catalog"),
+    renderModuleMetric("Order demand", String(state.orders.length), formatMoney(orderTotalPaise()))
+  ].join("");
+  const productRows = state.products.map((product) => `
+    <article class="inventory-row">
+      <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
+      <div>
+        <strong>${escapeHtml(product.name)}</strong>
+        <span>${escapeHtml(product.category)} - ${escapeHtml(product.sku)}</span>
+      </div>
+      <span>${formatMoney(product.pricePaise)}</span>
+      <span>${escapeHtml(product.stock)} stock</span>
+      <span class="status-pill ${Number(product.stock) <= 45 ? "warning" : "online"}">${Number(product.stock) <= 45 ? "Restock" : "Active"}</span>
+    </article>
+  `).join("");
+  const content = `
+    <section class="module-panel">
+      <div class="section-title">
+        <div><p class="eyebrow">Catalog control</p><h2>Shop owner inventory</h2></div>
+        <button class="btn ghost" type="button" data-action="cache" data-cache-action="refresh-products">Refresh product cache</button>
+      </div>
+      <div class="inventory-list">${productRows || `<div class="empty-state">No products loaded.</div>`}</div>
+    </section>
+  `;
+  return renderModuleShell("owner", "Product owner module", "Shop owner view for product inventory, catalog health and demand signals.", metrics, content);
+}
+
+function renderAdminModulePage() {
+  const metrics = [
+    renderModuleMetric("Users", "Session based", currentUserEmail() || "No user"),
+    renderModuleMetric("Orders", String(state.orders.length), `${statusCount("failed")} failed, ${statusCount("cancelled")} cancelled`),
+    renderModuleMetric("Cache state", cacheConfigured() ? "Online" : "Offline", state.cache?.prefix || "cache-commerce"),
+    renderModuleMetric("Revenue sample", formatMoney(orderTotalPaise()), "Current user scope")
+  ].join("");
+  const content = `
+    <section class="module-grid two">
+      ${renderModuleCard("Order operations", `Successful: ${statusCount("success")}, failed: ${statusCount("failed")}, cancelled: ${statusCount("cancelled")}.`, `<a class="btn ghost" href="/orders.html">Open orders</a>`)}
+      ${renderModuleCard("Cache operations", "Warm, clear, and inspect user cache keys from the operations page.", `<a class="btn ghost" href="/cache.html">Open cache</a>`)}
+      ${renderModuleCard("Product operations", "Catalog is code-backed and cached through Upstash for storefront speed.", `<a class="btn ghost" href="/owner.html">Open owner</a>`)}
+      ${renderModuleCard("Access note", "These module pages are session protected. Add Supabase role claims later for strict permission enforcement.", `<a class="btn primary" href="/monitoring.html">Monitor system</a>`)}
+    </section>
+  `;
+  return renderModuleShell("admin", "Admin module", "Administrative command center for orders, cache, catalog and access status.", metrics, content);
+}
+
+function renderMonitoringModulePage() {
+  const health = state.health || {};
+  const keys = state.cache?.keys || [];
+  const metrics = [
+    renderModuleMetric("Backend", health.ok ? "Healthy" : "Check", apiBaseUrl),
+    renderModuleMetric("Upstash", health.upstashConfigured ? "Configured" : "Missing", cacheConfigured() ? "Reachable" : "Not confirmed"),
+    renderModuleMetric("Supabase", health.supabaseConfigured ? "Configured" : "Missing", hasSupabaseConfig ? "Frontend configured" : "Frontend missing"),
+    renderModuleMetric("Cache keys", String(keys.length), productCacheLabel())
+  ].join("");
+  const keyRows = keys.map((entry) => `
+    <article class="monitor-row">
+      <strong>${escapeHtml(entry.key)}</strong>
+      <span>${escapeHtml(ttlLabel(entry.ttlSeconds))}</span>
+    </article>
+  `).join("");
+  const content = `
+    <section class="module-grid two">
+      ${renderModuleCard("API health", health.error ? escapeHtml(health.error) : `Backend reports ok=${escapeHtml(Boolean(health.ok))}.`, `<button class="btn ghost" type="button" data-action="reload-monitoring">Recheck</button>`)}
+      ${renderModuleCard("Deployment", `Frontend calls ${escapeHtml(apiBaseUrl)}. Verify Vercel env vars when a module is blank.`, `<a class="btn ghost" href="/cache.html">Cache page</a>`)}
+    </section>
+    <section class="module-panel">
+      <div class="section-title"><div><p class="eyebrow">Runtime cache</p><h2>Observed keys</h2></div></div>
+      <div class="monitor-list">${keyRows || `<div class="empty-state">No cache keys loaded.</div>`}</div>
+    </section>
+  `;
+  return renderModuleShell("monitoring", "Development team monitoring", "System view for backend health, environment configuration and Upstash cache visibility.", metrics, content);
+}
 function renderLoginPage() {
   return `
     <main class="login-page">
@@ -915,6 +1087,14 @@ function render() {
     app.innerHTML = renderOrdersPage();
   } else if (page === "cache") {
     app.innerHTML = renderCachePage();
+  } else if (page === "user") {
+    app.innerHTML = renderUserModulePage();
+  } else if (page === "owner") {
+    app.innerHTML = renderOwnerModulePage();
+  } else if (page === "admin") {
+    app.innerHTML = renderAdminModulePage();
+  } else if (page === "monitoring") {
+    app.innerHTML = renderMonitoringModulePage();
   } else {
     app.innerHTML = renderHomePage();
   }
@@ -998,6 +1178,9 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "cache") {
     await runCacheAction(button.dataset.cacheAction);
+  }
+  if (action === "reload-monitoring") {
+    await Promise.all([loadHealth(), loadCache()]);
   }
 });
 

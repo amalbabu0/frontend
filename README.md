@@ -5,11 +5,15 @@ Vanilla Vite multi-page ecommerce frontend. Pages are separate HTML entries and 
 ## Pages
 
 ```text
-/index.html   Products home
-/login.html   Login and signup
-/cart.html    Cart and checkout actions
-/orders.html  Order history and cancel action
-/cache.html   Upstash cache controls
+/index.html        Products home
+/login.html        Login and signup
+/cart.html         Cart and checkout actions
+/orders.html       Order history and cancel action
+/cache.html        Upstash cache controls
+/user.html         User/customer module
+/owner.html        Product owner/shop owner module
+/admin.html        Admin operations module
+/monitoring.html   Development team monitoring module
 ```
 
 ## Env
