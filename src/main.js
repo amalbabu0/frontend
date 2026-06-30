@@ -383,7 +383,7 @@ async function addToCart(productId, goToCart = false) {
     render();
     await saveCart(nextCart);
     if (goToCart) {
-      window.location.href = "/cart.html";
+      window.location.href = "/user/cart.html";
       return;
     }
     setMessage(`${product.name} added to cart.`);
@@ -456,7 +456,7 @@ async function submitOrder(status) {
     setMessage(`${data.order.id} saved as ${data.order.status}.`);
     await Promise.all([loadOrders(), loadCache()]);
     if (status === "success") {
-      window.location.href = "/orders.html";
+      window.location.href = "/user/orders.html";
     }
   } catch (error) {
     setMessage(error.message, "error");
@@ -591,12 +591,12 @@ function bottomNavLink(href, icon, label, key, badge = "") {
 function renderMonitoringBottomNav() {
   return `
     <nav class="bottom-nav monitor-bottom-nav" aria-label="Monitoring privilege navigation">
-      ${bottomNavLink("/soc.html", "S", "SOC", "soc")}
-      ${bottomNavLink("/system.html", "M", "System", "system")}
-      ${bottomNavLink("/web-analytics.html", "W", "Web", "webAnalytics")}
-      ${bottomNavLink("/speed-insights.html", "F", "Speed", "speedInsights")}
-      ${bottomNavLink("/observability.html", "O", "Observe", "observability")}
-      ${bottomNavLink("/analytics.html", "A", "Analytics", "analytics")}
+      ${bottomNavLink("/development/soc.html", "S", "SOC", "soc")}
+      ${bottomNavLink("/development/system.html", "M", "System", "system")}
+      ${bottomNavLink("/development/web-analytics.html", "W", "Web", "webAnalytics")}
+      ${bottomNavLink("/development/speed-insights.html", "F", "Speed", "speedInsights")}
+      ${bottomNavLink("/development/observability.html", "O", "Observe", "observability")}
+      ${bottomNavLink("/development/analytics.html", "A", "Analytics", "analytics")}
     </nav>
   `;
 }
@@ -608,11 +608,11 @@ function renderBottomNav() {
 
   return `
     <nav class="bottom-nav module-bottom-nav" aria-label="Module navigation">
-      ${bottomNavLink("/user.html", "U", "User", "user")}
-      ${bottomNavLink("/owner.html", "P", "Owner", "owner")}
-      ${bottomNavLink("/admin.html", "A", "Admin", "admin")}
-      ${bottomNavLink("/monitoring.html", "D", "Dev", "monitoring")}
-      ${bottomNavLink("/cart.html", "C", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
+      ${bottomNavLink("/user/index.html", "U", "User", "user")}
+      ${bottomNavLink("/owner/index.html", "P", "Owner", "owner")}
+      ${bottomNavLink("/admin/index.html", "A", "Admin", "admin")}
+      ${bottomNavLink("/development/index.html", "D", "Dev", "monitoring")}
+      ${bottomNavLink("/user/cart.html", "C", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
     </nav>
   `;
 }
@@ -629,13 +629,13 @@ function renderHeader() {
       </div>
       <nav class="main-nav" aria-label="Store navigation">
         ${navLink("/index.html", "Home", "home")}
-        ${navLink("/user.html", "User", "user")}
-        ${navLink("/owner.html", "Owner", "owner")}
-        ${navLink("/admin.html", "Admin", "admin")}
-        ${navLink("/monitoring.html", "Dev", "monitoring")}
-        ${navLink("/cart.html", `Cart (${cartCount()})`, "cart")}
-        ${navLink("/orders.html", "Orders", "orders")}
-        ${navLink("/cache.html", "Cache", "cache")}
+        ${navLink("/user/index.html", "User", "user")}
+        ${navLink("/owner/index.html", "Owner", "owner")}
+        ${navLink("/admin/index.html", "Admin", "admin")}
+        ${navLink("/development/index.html", "Dev", "monitoring")}
+        ${navLink("/user/cart.html", `Cart (${cartCount()})`, "cart")}
+        ${navLink("/user/orders.html", "Orders", "orders")}
+        ${navLink("/admin/cache.html", "Cache", "cache")}
       </nav>
       <button class="user-button" type="button" data-action="sign-out" title="Sign out">${escapeHtml(currentUserEmail())}</button>
     </header>
@@ -658,7 +658,7 @@ function renderProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
     <article class="product-card">
-      <a class="product-media" href="/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+      <a class="product-media" href="/user/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
       </a>
       <div class="product-info">
@@ -930,9 +930,9 @@ function renderUserModulePage() {
   const content = `
     <section class="module-grid two">
       ${renderModuleCard("Shopping profile", "Manage the customer journey from browsing products to cart and order history.", `<a class="btn primary" href="/index.html">Shop products</a>`)}
-      ${renderModuleCard("Current cart", `${cartCount()} items are saved in this user's Upstash cart cache.`, `<a class="btn ghost" href="/cart.html">Open cart</a>`)}
-      ${renderModuleCard("Latest order", latestOrder ? `${escapeHtml(latestOrder.id)} is currently ${escapeHtml(latestOrder.status)}.` : "No orders created yet.", `<a class="btn ghost" href="/orders.html">View orders</a>`)}
-      ${renderModuleCard("User cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/cache.html">View cache</a>`)}
+      ${renderModuleCard("Current cart", `${cartCount()} items are saved in this user's Upstash cart cache.`, `<a class="btn ghost" href="/user/cart.html">Open cart</a>`)}
+      ${renderModuleCard("Latest order", latestOrder ? `${escapeHtml(latestOrder.id)} is currently ${escapeHtml(latestOrder.status)}.` : "No orders created yet.", `<a class="btn ghost" href="/user/orders.html">View orders</a>`)}
+      ${renderModuleCard("User cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/admin/cache.html">View cache</a>`)}
     </section>
   `;
   return renderModuleShell("user", "User module", "Customer home for account, cart, checkout and order history.", metrics, content);
@@ -980,10 +980,10 @@ function renderAdminModulePage() {
   ].join("");
   const content = `
     <section class="module-grid two">
-      ${renderModuleCard("Order operations", `Successful: ${statusCount("success")}, failed: ${statusCount("failed")}, cancelled: ${statusCount("cancelled")}.`, `<a class="btn ghost" href="/orders.html">Open orders</a>`)}
-      ${renderModuleCard("Cache operations", "Warm, clear, and inspect user cache keys from the operations page.", `<a class="btn ghost" href="/cache.html">Open cache</a>`)}
-      ${renderModuleCard("Product operations", "Catalog is code-backed and cached through Upstash for storefront speed.", `<a class="btn ghost" href="/owner.html">Open owner</a>`)}
-      ${renderModuleCard("Access note", "These module pages are session protected. Add Supabase role claims later for strict permission enforcement.", `<a class="btn primary" href="/monitoring.html">Monitor system</a>`)}
+      ${renderModuleCard("Order operations", `Successful: ${statusCount("success")}, failed: ${statusCount("failed")}, cancelled: ${statusCount("cancelled")}.`, `<a class="btn ghost" href="/user/orders.html">Open orders</a>`)}
+      ${renderModuleCard("Cache operations", "Warm, clear, and inspect user cache keys from the operations page.", `<a class="btn ghost" href="/admin/cache.html">Open cache</a>`)}
+      ${renderModuleCard("Product operations", "Catalog is code-backed and cached through Upstash for storefront speed.", `<a class="btn ghost" href="/owner/index.html">Open owner</a>`)}
+      ${renderModuleCard("Access note", "These module pages are session protected. Add Supabase role claims later for strict permission enforcement.", `<a class="btn primary" href="/development/index.html">Monitor system</a>`)}
     </section>
   `;
   return renderModuleShell("admin", "Admin module", "Administrative command center for orders, cache, catalog and access status.", metrics, content);
@@ -1110,7 +1110,7 @@ function renderMonitoringModulePage() {
   const content = `
     <section class="module-grid two">
       ${renderModuleCard("API health", health.error ? escapeHtml(health.error) : `Backend reports ok=${escapeHtml(Boolean(health.ok))}.`, `<button class="btn ghost" type="button" data-action="reload-monitoring">Recheck</button>`)}
-      ${renderModuleCard("Deployment", `Frontend calls ${escapeHtml(apiBaseUrl)}. Verify Vercel env vars when a module is blank.`, `<a class="btn ghost" href="/cache.html">Cache page</a>`)}
+      ${renderModuleCard("Deployment", `Frontend calls ${escapeHtml(apiBaseUrl)}. Verify Vercel env vars when a module is blank.`, `<a class="btn ghost" href="/admin/cache.html">Cache page</a>`)}
     </section>
     <section class="module-panel">
       <div class="section-title"><div><p class="eyebrow">Runtime cache</p><h2>Observed keys</h2></div></div>

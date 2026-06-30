@@ -1,25 +1,51 @@
 # ScaleMart Commerce Frontend
 
-Vanilla Vite multi-page ecommerce frontend. Pages are separate HTML entries and share `src/main.js` plus `src/app.css`.
+Vanilla Vite multi-page ecommerce frontend. Pages are separated by role directories and share `src/main.js` plus `src/app.css`.
 
-## Pages
+## Role Directories
 
 ```text
-/index.html        Products home
-/login.html        Login and signup
-/cart.html         Cart and checkout actions
-/orders.html       Order history and cancel action
-/cache.html        Upstash cache controls
-/user.html         User/customer module
-/owner.html        Product owner/shop owner module
-/admin.html        Admin operations module
-/monitoring.html       Development team monitoring overview
-/soc.html              SOC monitoring
-/system.html           System monitoring
-/web-analytics.html    Web analytics
-/speed-insights.html   Speed insights
-/observability.html    Observability
-/analytics.html        Analytics
+/user/index.html                    User/customer dashboard
+/user/cart.html                     User cart and checkout
+/user/orders.html                   User order history
+
+/owner/index.html                   Product owner/shop owner dashboard
+/owner/inventory.html               Product owner inventory
+/owner/cache.html                   Product owner cache view
+
+/admin/index.html                   Admin operations dashboard
+/admin/orders.html                  Admin order operations
+/admin/cache.html                   Admin cache operations
+
+/development/index.html             Development monitoring overview
+/development/soc.html               SOC monitoring
+/development/system.html            System monitoring
+/development/web-analytics.html     Web analytics
+/development/speed-insights.html    Speed insights
+/development/observability.html     Observability
+/development/analytics.html         Analytics
+```
+
+## Legacy Top-Level Pages
+
+The older flat pages are still built for compatibility:
+
+```text
+/index.html
+/login.html
+/cart.html
+/orders.html
+/cache.html
+/user.html
+/owner.html
+/admin.html
+/monitoring.html
+/soc.html
+/system.html
+/web-analytics.html
+/speed-insights.html
+/observability.html
+/analytics.html
 ```
 
 ## Env
