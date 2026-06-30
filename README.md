@@ -27,6 +27,12 @@ Vanilla Vite multi-page ecommerce frontend. Pages are separated by role director
 ```
 
 
+## Access Rules
+
+```text
+Public: /index.html, /login.html
+Protected by Supabase session: /user/*, /owner/*, /admin/*, /development/*
+```
 ## Env
 
 ```text

@@ -247,6 +247,107 @@ img {
   color: var(--yellow);
 }
 
+.public-home {
+  margin-bottom: 46px;
+}
+
+.public-hero {
+  min-height: 330px;
+}
+
+.public-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.seo-section {
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.seo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.seo-grid article {
+  min-height: 132px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.seo-grid strong,
+.seo-grid span {
+  display: block;
+}
+
+.seo-grid span {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.faq-list {
+  display: grid;
+  gap: 10px;
+}
+
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.faq-item summary {
+  cursor: pointer;
+  padding: 13px;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.faq-item p {
+  margin: 0;
+  padding: 0 13px 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.site-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px max(18px, calc((100vw - 1460px) / 2));
+  border-top: 1px solid var(--line);
+  background: #172337;
+  color: #ffffff;
+}
+
+.site-footer p {
+  margin: 5px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.site-footer a {
+  color: #ffffff;
+  font-weight: 800;
+}
 .store-toolbar,
 .page-section,
 .summary-panel {
@@ -1111,7 +1212,8 @@ select {
   .cache-grid,
   .login-page,
   .module-metrics,
-  .module-grid.two {
+  .module-grid.two,
+  .seo-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1169,7 +1271,8 @@ select {
   .login-card,
   .login-hero,
   .module-hero,
-  .module-panel {
+  .module-panel,
+  .seo-section {
     padding: 13px;
   }
 
@@ -1177,6 +1280,14 @@ select {
   .login-hero h1,
   .module-hero h1 {
     font-size: 2rem;
+  }
+
+  .site-footer {
+    display: grid;
+  }
+
+  .site-footer nav {
+    justify-content: flex-start;
   }
 
   .product-actions {

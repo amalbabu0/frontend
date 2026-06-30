@@ -4,7 +4,7 @@ import "./app.css";
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["home", "cart", "orders", "cache", "user", "owner", "admin", "monitoring", "soc", "system", "webAnalytics", "speedInsights", "observability", "analytics"]);
+const protectedPages = new Set(["cart", "orders", "cache", "user", "owner", "admin", "monitoring", "soc", "system", "webAnalytics", "speedInsights", "observability", "analytics"]);
 const monitoringPages = new Set(["monitoring", "soc", "system", "webAnalytics", "speedInsights", "observability", "analytics"]);
 
 const state = {
@@ -318,13 +318,19 @@ async function loadHealth() {
 }
 
 async function loadPageData() {
+  if (page === "home") {
+    if (isSignedIn()) {
+      await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
+      return;
+    }
+    await loadProducts();
+    return;
+  }
+
   if (!isSignedIn()) {
     return;
   }
 
-  if (page === "home") {
-    await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
-  }
   if (page === "cart") {
     await Promise.all([loadProducts(), loadCart(), loadCache()]);
   }
@@ -353,6 +359,11 @@ async function saveCart(nextCart) {
 
 async function addToCart(productId, goToCart = false) {
   clearMessage();
+  if (!isSignedIn()) {
+    const nextUrl = goToCart ? "/user/cart.html" : "/index.html";
+    window.location.href = `/login.html?next=${encodeURIComponent(nextUrl)}`;
+    return;
+  }
   const product = productById(productId);
   if (!product) {
     return;
@@ -530,7 +541,7 @@ async function submitAuth() {
       return;
     }
 
-    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/index.html";
+    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/index.html";
     window.location.href = nextUrl;
   } catch (error) {
     setMessage(error.message, "error");
@@ -637,7 +648,7 @@ function renderHeader() {
         ${navLink("/user/orders.html", "Orders", "orders")}
         ${navLink("/admin/cache.html", "Cache", "cache")}
       </nav>
-      <button class="user-button" type="button" data-action="sign-out" title="Sign out">${escapeHtml(currentUserEmail())}</button>
+      ${isSignedIn() ? `<button class="user-button" type="button" data-action="sign-out" title="Sign out">${escapeHtml(currentUserEmail())}</button>` : `<a class="user-button" href="/login.html">Login</a>`}
     </header>
   `;
 }
@@ -682,24 +693,59 @@ function renderProductCard(product) {
   `;
 }
 
+function renderFaqItems() {
+  const faqs = [
+    ["Can I browse without login?", "Yes. The home page and login page are public. Cart, orders, admin, owner and monitoring pages require a Supabase session."],
+    ["Where is cart data stored?", "Cart and order data are stored per signed-in user through the backend and Upstash Redis cache."],
+    ["Who can use the monitoring pages?", "The monitoring pages are session-protected and ready for role claims. Add Supabase role enforcement when you want strict privilege control."],
+    ["Can shop owners manage products?", "The owner module shows catalog, inventory, stock health and product cache controls for shop owner workflows."]
+  ];
+  return faqs.map(([question, answer]) => `
+    <details class="faq-item">
+      <summary>${escapeHtml(question)}</summary>
+      <p>${escapeHtml(answer)}</p>
+    </details>
+  `).join("");
+}
+
 function renderHomePage() {
-  const products = visibleProducts();
+  const products = visibleProducts().slice(0, 8);
   return `
     ${renderHeader()}
     ${renderCategoryStrip()}
-    <main class="home-layout">
-      <section class="store-banner">
+    <main class="home-layout public-home">
+      <section class="store-banner public-hero">
         <div>
-          <p class="eyebrow">ScaleMart Assured</p>
-          <h1>Fast checkout for daily deals</h1>
-          <p>Signed-in carts and orders stay synced through your cache backend.</p>
+          <p class="eyebrow">ScaleMart Commerce</p>
+          <h1>Fast ecommerce with role-based dashboards.</h1>
+          <p>Browse products publicly, then sign in to access cart, orders, shop owner tools, admin operations and development monitoring.</p>
+          <div class="public-actions">
+            <a class="btn primary" href="/login.html">Login to continue</a>
+            <a class="btn ghost" href="#featured-products">View products</a>
+          </div>
         </div>
       </section>
 
-      <section class="store-toolbar">
+      <section class="seo-section" aria-labelledby="seoTitle">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Online shopping platform</p>
+            <h2 id="seoTitle">Role-ready ecommerce for customers, owners, admins and developers</h2>
+            <p>ScaleMart combines a customer storefront with Supabase login, user-scoped cart cache, order history, shop owner inventory, admin cache operations and development monitoring pages.</p>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article><strong>User module</strong><span>Browse products, manage cart, place orders and review order history.</span></article>
+          <article><strong>Shop owner module</strong><span>Review catalog, stock levels, product cache and owner inventory views.</span></article>
+          <article><strong>Admin module</strong><span>Operate orders, cache controls and platform status from protected pages.</span></article>
+          <article><strong>Development module</strong><span>Monitor SOC, system health, analytics, speed insights and observability.</span></article>
+        </div>
+      </section>
+
+      <section id="featured-products" class="store-toolbar">
         <div>
-          <h2>Top picks</h2>
-          <p>${escapeHtml(productCacheLabel())} - ${escapeHtml(state.productCache?.key || "catalog")}</p>
+          <h2>Featured products</h2>
+          <p>${escapeHtml(productCacheLabel())} - public catalog preview</p>
         </div>
         <div class="toolbar-controls">
           <select data-filter="sort" aria-label="Sort products">
@@ -715,14 +761,38 @@ function renderHomePage() {
 
       ${renderMessage()}
 
-      <section class="product-grid" aria-label="Products">
+      <section class="product-grid" aria-label="Featured products">
         ${products.length ? products.map(renderProductCard).join("") : `<div class="empty-state">No products found.</div>`}
       </section>
+
+      <section class="seo-section" aria-labelledby="faqTitle">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 id="faqTitle">Frequently asked questions</h2>
+          </div>
+        </div>
+        <div class="faq-list">
+          ${renderFaqItems()}
+        </div>
+      </section>
     </main>
-    ${renderBottomNav()}
+    <footer class="site-footer">
+      <div>
+        <strong>ScaleMart</strong>
+        <p>Public ecommerce homepage with protected role dashboards.</p>
+      </div>
+      <nav aria-label="Footer links">
+        <a href="/login.html">Login</a>
+        <a href="/user/index.html">User</a>
+        <a href="/owner/index.html">Owner</a>
+        <a href="/admin/index.html">Admin</a>
+        <a href="/development/index.html">Monitoring</a>
+      </nav>
+    </footer>
+    ${isSignedIn() ? renderBottomNav() : ""}
   `;
 }
-
 function renderCartItem(item) {
   const product = productById(item.productId) || {};
   return `
@@ -1312,9 +1382,13 @@ async function bootstrap() {
 
   if (!hasSupabaseConfig || !supabase) {
     state.authReady = true;
-    state.message = "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env.";
-    state.messageType = "error";
-    render();
+    if (page === "home") {
+      await loadProducts();
+    } else {
+      state.message = "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env.";
+      state.messageType = "error";
+      render();
+    }
     return;
   }
 
@@ -1323,7 +1397,7 @@ async function bootstrap() {
   state.authReady = true;
 
   if (page === "login" && state.session) {
-    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/index.html";
+    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/index.html";
     window.location.href = nextUrl;
     return;
   }
