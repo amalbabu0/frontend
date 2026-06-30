@@ -697,6 +697,15 @@ select {
   backdrop-filter: blur(12px);
 }
 
+
+.monitor-bottom-nav {
+  width: min(760px, calc(100% - 28px));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.monitoring-grid .module-card {
+  min-height: 170px;
+}
 .bottom-nav-link {
   position: relative;
   display: grid;
@@ -1141,6 +1150,12 @@ select {
   .bottom-nav {
     bottom: 8px;
     width: min(100% - 16px, 640px);
+  }
+
+  .monitor-bottom-nav {
+    width: min(100% - 16px, 760px);
+    overflow-x: auto;
+    grid-template-columns: repeat(6, minmax(72px, 1fr));
   }
 
   .bottom-nav-link {

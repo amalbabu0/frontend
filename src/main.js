@@ -4,7 +4,8 @@ import "./app.css";
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["home", "cart", "orders", "cache", "user", "owner", "admin", "monitoring"]);
+const protectedPages = new Set(["home", "cart", "orders", "cache", "user", "owner", "admin", "monitoring", "soc", "system", "webAnalytics", "speedInsights", "observability", "analytics"]);
+const monitoringPages = new Set(["monitoring", "soc", "system", "webAnalytics", "speedInsights", "observability", "analytics"]);
 
 const state = {
   authReady: false,
@@ -333,7 +334,7 @@ async function loadPageData() {
   if (page === "cache" || page === "user" || page === "owner" || page === "admin") {
     await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
   }
-  if (page === "monitoring") {
+  if (monitoringPages.has(page)) {
     await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache(), loadHealth()]);
   }
 }
@@ -587,7 +588,24 @@ function bottomNavLink(href, icon, label, key, badge = "") {
   `;
 }
 
+function renderMonitoringBottomNav() {
+  return `
+    <nav class="bottom-nav monitor-bottom-nav" aria-label="Monitoring privilege navigation">
+      ${bottomNavLink("/soc.html", "S", "SOC", "soc")}
+      ${bottomNavLink("/system.html", "M", "System", "system")}
+      ${bottomNavLink("/web-analytics.html", "W", "Web", "webAnalytics")}
+      ${bottomNavLink("/speed-insights.html", "F", "Speed", "speedInsights")}
+      ${bottomNavLink("/observability.html", "O", "Observe", "observability")}
+      ${bottomNavLink("/analytics.html", "A", "Analytics", "analytics")}
+    </nav>
+  `;
+}
+
 function renderBottomNav() {
+  if (monitoringPages.has(page)) {
+    return renderMonitoringBottomNav();
+  }
+
   return `
     <nav class="bottom-nav module-bottom-nav" aria-label="Module navigation">
       ${bottomNavLink("/user.html", "U", "User", "user")}
@@ -971,6 +989,109 @@ function renderAdminModulePage() {
   return renderModuleShell("admin", "Admin module", "Administrative command center for orders, cache, catalog and access status.", metrics, content);
 }
 
+function renderMonitoringPrivilegePage() {
+  const health = state.health || {};
+  const keys = state.cache?.keys || [];
+  const monitoringConfigs = {
+    soc: {
+      title: "SOC monitoring",
+      description: "Security operations view for account activity, failed flows and incident readiness.",
+      signal: "Security posture",
+      value: statusCount("failed") ? "Review" : "Stable",
+      note: `${statusCount("failed")} failed orders observed`,
+      cards: [
+        ["Authentication watch", `Signed-in session belongs to ${escapeHtml(currentUserEmail() || "unknown user")}.`],
+        ["Incident queue", `${statusCount("failed")} failed orders and ${statusCount("cancelled")} cancelled orders are visible in this scope.`],
+        ["Cache access", `${keys.length} monitored keys are available for this user context.`],
+        ["Response action", "Use the admin module to inspect order state and the cache module to clear suspicious user cache data."]
+      ]
+    },
+    system: {
+      title: "System monitoring",
+      description: "Runtime health for backend, Supabase, Upstash and product cache dependencies.",
+      signal: "Backend",
+      value: health.ok ? "Healthy" : "Check",
+      note: apiBaseUrl,
+      cards: [
+        ["Backend API", health.error ? escapeHtml(health.error) : `Health endpoint ok=${escapeHtml(Boolean(health.ok))}.`],
+        ["Upstash Redis", health.upstashConfigured ? "Environment is configured and cache page can inspect keys." : "Upstash env vars are missing."],
+        ["Supabase Auth", health.supabaseConfigured ? "Backend Supabase verification is configured." : "Backend Supabase env vars are missing."],
+        ["Product cache", `${productCacheLabel()} for ${escapeHtml(state.productCache?.key || "catalog")}.`]
+      ]
+    },
+    webAnalytics: {
+      title: "Web analytics",
+      description: "Storefront funnel view for catalog, cart and order activity in the current signed-in scope.",
+      signal: "Catalog",
+      value: `${state.products.length} SKUs`,
+      note: `${cartCount()} cart items`,
+      cards: [
+        ["Catalog coverage", `${state.products.length} products across ${categories().filter((category) => category !== "all").length} departments.`],
+        ["Cart intent", `${cartCount()} items currently saved with value ${formatMoney(cartTotalPaise())}.`],
+        ["Order activity", `${state.orders.length} orders with ${statusCount("success")} successful outcomes.`],
+        ["Conversion sample", state.orders.length ? `${Math.round((statusCount("success") / state.orders.length) * 100)}% successful order share.` : "No orders yet for conversion sampling."]
+      ]
+    },
+    speedInsights: {
+      title: "Speed insights",
+      description: "Performance signals for cache hit status, dependency readiness and storefront weight.",
+      signal: "Cache speed",
+      value: productCacheLabel(),
+      note: state.productCache?.ttlSeconds ? `${state.productCache.ttlSeconds}s product TTL` : "TTL pending",
+      cards: [
+        ["Product delivery", `${productCacheLabel()} from ${escapeHtml(state.productCache?.source || "origin")}.`],
+        ["Runtime checks", health.ok ? "Backend health check is passing." : "Backend health check needs attention."],
+        ["Frontend build", "Vite emits static HTML pages with one shared JS/CSS asset set."],
+        ["Optimization queue", "Keep catalog cached, reduce image weight, and watch checkout API latency in production."]
+      ]
+    },
+    observability: {
+      title: "Observability",
+      description: "Operational visibility into cache keys, API state, product data and customer activity.",
+      signal: "Signals",
+      value: `${keys.length} keys`,
+      note: cacheConfigured() ? "Cache reachable" : "Cache not confirmed",
+      cards: [
+        ["Cache keys", keys.length ? keys.map((entry) => escapeHtml(entry.key)).join(", ") : "No keys loaded yet."],
+        ["Order events", `${state.orders.length} cached order records in this user scope.`],
+        ["Catalog state", `${state.products.length} products loaded from ${escapeHtml(state.productCache?.source || "origin")}.`],
+        ["Trace target", "Use request ids from Vercel logs together with backend health and cache snapshots."]
+      ]
+    },
+    analytics: {
+      title: "Analytics",
+      description: "Business analytics for products, orders, cart value and operational outcomes.",
+      signal: "Order value",
+      value: formatMoney(orderTotalPaise()),
+      note: `${state.orders.length} orders tracked`,
+      cards: [
+        ["Revenue sample", `${formatMoney(orderTotalPaise())} in current user-scoped order value.`],
+        ["Best stocked", state.products.length ? `${escapeHtml([...state.products].sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))[0].name)} has highest stock.` : "Products not loaded."],
+        ["Failure rate", state.orders.length ? `${Math.round((statusCount("failed") / state.orders.length) * 100)}% failed order share.` : "No failed-order sample yet."],
+        ["Next report", "Connect event analytics or warehouse tables when you add production tracking."]
+      ]
+    }
+  };
+  const config = monitoringConfigs[page] || monitoringConfigs.system;
+  const metrics = [
+    renderModuleMetric("Privilege", "Monitoring", "Session protected"),
+    renderModuleMetric(config.signal, config.value, config.note),
+    renderModuleMetric("Backend", health.ok ? "Healthy" : "Check", apiBaseUrl),
+    renderModuleMetric("Cache", cacheConfigured() ? "Online" : "Check", `${keys.length} keys`)
+  ].join("");
+  const content = `
+    <section class="module-grid two monitoring-grid">
+      ${config.cards.map(([title, body]) => renderModuleCard(title, body)).join("")}
+    </section>
+    <section class="module-panel">
+      <div class="section-title">
+        <div><p class="eyebrow">Monitoring action</p><h2>Refresh live checks</h2></div>
+        <button class="btn ghost" type="button" data-action="reload-monitoring">Recheck</button>
+      </div>
+    </section>
+  `;
+  return renderModuleShell("monitoring", config.title, config.description, metrics, content);
+}
 function renderMonitoringModulePage() {
   const health = state.health || {};
   const keys = state.cache?.keys || [];
@@ -1095,6 +1216,8 @@ function render() {
     app.innerHTML = renderAdminModulePage();
   } else if (page === "monitoring") {
     app.innerHTML = renderMonitoringModulePage();
+  } else if (monitoringPages.has(page)) {
+    app.innerHTML = renderMonitoringPrivilegePage();
   } else {
     app.innerHTML = renderHomePage();
   }

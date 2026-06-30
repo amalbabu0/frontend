@@ -13,7 +13,13 @@ Vanilla Vite multi-page ecommerce frontend. Pages are separate HTML entries and 
 /user.html         User/customer module
 /owner.html        Product owner/shop owner module
 /admin.html        Admin operations module
-/monitoring.html   Development team monitoring module
+/monitoring.html       Development team monitoring overview
+/soc.html              SOC monitoring
+/system.html           System monitoring
+/web-analytics.html    Web analytics
+/speed-insights.html   Speed insights
+/observability.html    Observability
+/analytics.html        Analytics
 ```
 
 ## Env

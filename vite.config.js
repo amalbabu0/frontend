@@ -18,7 +18,13 @@ export default defineConfig({
         user: htmlEntry("./user.html"),
         owner: htmlEntry("./owner.html"),
         admin: htmlEntry("./admin.html"),
-        monitoring: htmlEntry("./monitoring.html")
+        monitoring: htmlEntry("./monitoring.html"),
+        soc: htmlEntry("./soc.html"),
+        system: htmlEntry("./system.html"),
+        webAnalytics: htmlEntry("./web-analytics.html"),
+        speedInsights: htmlEntry("./speed-insights.html"),
+        observability: htmlEntry("./observability.html"),
+        analytics: htmlEntry("./analytics.html")
       }
     }
   }
