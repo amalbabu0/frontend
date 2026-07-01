@@ -9,6 +9,7 @@ const protectedPages = new Set(["cart", "orders", "cache", "user", "payment"]);
 const publicPages = new Set(["home", "categories", "account", "publicCart", "product"]);
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
+const deliveryAddressLegacyKey = "zakiDeliveryAddress";
 
 const state = {
   authReady: false,
@@ -367,6 +368,11 @@ function isSignedIn() {
 
 function currentUserEmail() {
   return state.session?.user?.email || "";
+}
+
+function deliveryAddressStorageKey() {
+  const userKey = state.session?.user?.id || currentUserEmail() || "guest";
+  return `${deliveryAddressLegacyKey}:${encodeURIComponent(userKey)}`;
 }
 
 function authHeaders() {
@@ -952,11 +958,7 @@ async function submitPaymentAddress(form) {
 
   const formData = new FormData(form);
   const address = Object.fromEntries(formData.entries());
-  try {
-    sessionStorage.setItem("zakiDeliveryAddress", JSON.stringify(address));
-  } catch {
-    // Storage can be unavailable in stricter browser modes; checkout can still continue.
-  }
+  savePaymentAddress(address);
 
   state.loading.action = "payment";
   render();
@@ -1600,12 +1602,14 @@ function renderFilledCartItem(item) {
 
 function renderFilledCartPage() {
   const summary = cartPriceSummary();
+  const address = savedPaymentAddress();
+  const addressSummary = [address.city, address.state, address.pincode].filter(Boolean).join(", ");
   return `
     <main class="clone-page public-cart-page filled-cart-page">
       ${renderCloneBackBar("My Cart")}
       <section class="cart-address-strip">
-        <span>From Saved Addresses</span>
-        <button type="button">Enter Delivery Pincode</button>
+        <span>${addressSummary ? `Deliver to ${escapeHtml(addressSummary)}` : "From Saved Addresses"}</span>
+        <button type="button" data-action="go-payment">${address.pincode ? "Change Address" : "Enter Delivery Pincode"}</button>
       </section>
 
       <section class="filled-cart-list" aria-label="Cart items">
@@ -1642,12 +1646,55 @@ function renderFilledCartPage() {
   `;
 }
 
-function savedPaymentAddress() {
+function parseStoredAddress(value) {
+  if (!value) {
+    return {};
+  }
+
   try {
-    return JSON.parse(sessionStorage.getItem("zakiDeliveryAddress") || "{}");
+    const address = JSON.parse(value);
+    return address && typeof address === "object" ? address : {};
   } catch {
     return {};
   }
+}
+
+function savePaymentAddress(address) {
+  try {
+    localStorage.setItem(deliveryAddressStorageKey(), JSON.stringify(address));
+    sessionStorage.removeItem(deliveryAddressLegacyKey);
+  } catch {
+    try {
+      sessionStorage.setItem(deliveryAddressLegacyKey, JSON.stringify(address));
+    } catch {
+      // Storage can be unavailable in stricter browser modes; checkout can still continue.
+    }
+  }
+}
+
+function savedPaymentAddress() {
+  const storageKey = deliveryAddressStorageKey();
+
+  try {
+    const savedAddress = parseStoredAddress(localStorage.getItem(storageKey));
+    if (Object.keys(savedAddress).length) {
+      return savedAddress;
+    }
+  } catch {
+    // Fall through to the legacy session value.
+  }
+
+  try {
+    const legacyAddress = parseStoredAddress(sessionStorage.getItem(deliveryAddressLegacyKey));
+    if (Object.keys(legacyAddress).length) {
+      savePaymentAddress(legacyAddress);
+      return legacyAddress;
+    }
+  } catch {
+    // Ignore unavailable session storage.
+  }
+
+  return {};
 }
 
 function renderPaymentSummaryItem(item) {
