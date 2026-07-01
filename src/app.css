@@ -3655,3 +3655,43 @@ body[data-page="home"] .footer-columns h3 {
     box-shadow: 0 -1px 3px rgba(23, 35, 55, 0.14);
   }
 }
+
+/* Remove phone-card shell on mobile */
+@media (max-width: 760px) {
+  body[data-page="home"] {
+    background: #f1f2f4;
+  }
+
+  body[data-page="home"] .customer-header.top-header {
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    background: #ffffff;
+  }
+
+  body[data-page="home"] .market-categories.category-strip {
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  body[data-page="home"] .home-layout.market-home.flipkart-shell {
+    width: 100%;
+    margin: 0;
+    padding: 10px 10px 76px;
+    background: #f1f2f4;
+  }
+
+  body[data-page="home"] .market-product-grid {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body[data-page="home"] .bottom-nav {
+    bottom: 0;
+    width: 100%;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+}
