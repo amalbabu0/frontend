@@ -1185,6 +1185,233 @@ select {
   padding: 0 12px;
 }
 
+/* Flipkart-style login screen */
+body[data-page="login"] {
+  background: #3f3449;
+  color: #111111;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.flip-login-page {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 0 0 58px;
+  align-items: start;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.flip-login-header {
+  position: relative;
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  background: #2874f0;
+  color: #ffffff;
+}
+
+.flip-login-close {
+  position: absolute;
+  top: 18px;
+  left: 12px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: #ffffff;
+}
+
+.flip-login-close svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.flip-login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 800;
+}
+
+.flip-login-brand i {
+  display: grid;
+  width: 22px;
+  height: 19px;
+  place-items: center;
+  border-radius: 2px;
+  background: #ffe500;
+  color: #2874f0;
+  font-size: 0.82rem;
+  font-style: italic;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.flip-login-sheet {
+  min-height: calc(100dvh - 130px);
+  margin-top: -8px;
+  padding: 30px 18px 86px;
+  border-radius: 10px 10px 0 0;
+  background: #ffffff;
+}
+
+.flip-login-sheet h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.flip-login-sheet > p:not(.login-consent) {
+  margin: 7px 0 24px;
+  color: #575f6b;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.phone-field {
+  position: relative;
+  display: block;
+}
+
+.phone-field > span {
+  position: absolute;
+  top: -7px;
+  left: 13px;
+  z-index: 1;
+  padding: 0 4px;
+  background: #ffffff;
+  color: #0b61ff;
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.phone-input {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 48px;
+  border: 2px solid #246bff;
+  border-radius: 2px;
+  background: #ffffff;
+}
+
+.phone-input b {
+  padding-left: 12px;
+  color: #111111;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.phone-input input {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  outline: 0;
+  padding: 0 12px 0 5px;
+  background: transparent;
+  color: #111111;
+  font-size: 0.9rem;
+}
+
+.flip-email-link,
+.flip-phone-link {
+  display: block;
+  min-height: 44px;
+  margin: 8px 0 11px auto;
+  padding: 0;
+  background: transparent;
+  color: #0b61ff;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.login-consent {
+  max-width: 360px;
+  margin: 0;
+  color: #575f6b;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.login-consent a {
+  color: #0b61ff;
+}
+
+.flip-login-bottom {
+  position: fixed;
+  right: 50%;
+  bottom: 0;
+  z-index: 80;
+  width: min(100%, 430px);
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid #d8d8d8;
+  background: #ffffff;
+  transform: translateX(50%);
+}
+
+.flip-login-continue,
+.flip-login-submit {
+  display: grid;
+  width: 100%;
+  min-height: 38px;
+  place-items: center;
+  border-radius: 1px;
+  background: #bdbdbd;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.flip-login-submit {
+  min-height: 42px;
+  margin-top: 2px;
+  background: #fb641b;
+}
+
+.flip-email-sheet {
+  display: grid;
+  align-content: start;
+  gap: 0;
+}
+
+.flip-email-sheet .auth-tabs {
+  margin: 2px 0 16px;
+}
+
+.flip-email-form label {
+  color: #575f6b;
+  font-size: 0.82rem;
+}
+
+.flip-email-form input {
+  min-height: 44px;
+  border: 1px solid #c9d3df;
+  border-radius: 2px;
+}
+
+body[data-page="login"] .flip-login-page {
+  width: min(100%, 430px);
+  margin: 0 auto;
+  padding: 0 0 58px;
+  background: #ffffff;
+}
+
 @media (max-width: 1180px) {
   .top-header {
     grid-template-columns: 170px minmax(220px, 1fr);

@@ -12,6 +12,7 @@ const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 const state = {
   authReady: false,
   authMode: "signin",
+  loginView: "phone",
   email: "",
   password: "",
   session: null,
@@ -1708,34 +1709,64 @@ function renderMonitoringModulePage() {
   return renderModuleShell("monitoring", "Development team monitoring", "System view for backend health, environment configuration and Upstash cache visibility.", metrics, content);
 }
 function renderLoginPage() {
+  if (state.loginView === "email") {
+    return `
+      <main class="login-page flip-login-page">
+        <header class="flip-login-header">
+          <a class="flip-login-close" href="/index.html" aria-label="Close login">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </a>
+          <a class="flip-login-brand" href="/index.html" aria-label="Flipkart home">
+            <span>Flipkart</span><i aria-hidden="true">f</i>
+          </a>
+        </header>
+        <section class="flip-login-sheet flip-email-sheet" aria-labelledby="loginTitle">
+          <button class="flip-phone-link" type="button" data-action="login-view" data-view="phone">Use Phone Number</button>
+          <h1 id="loginTitle">${state.authMode === "signin" ? "Log in with Email-ID" : "Create account"}</h1>
+          <p>Enter your email and password to continue.</p>
+          ${renderMessage()}
+          <div class="auth-tabs">
+            <button class="${state.authMode === "signin" ? "active" : ""}" type="button" data-action="auth-mode" data-mode="signin">Login</button>
+            <button class="${state.authMode === "signup" ? "active" : ""}" type="button" data-action="auth-mode" data-mode="signup">Signup</button>
+          </div>
+          <form class="auth-form flip-email-form" data-form="auth">
+            <label>Email<input data-field="auth-email" data-focus-key="auth-email" type="email" autocomplete="email" value="${escapeHtml(state.email)}" required></label>
+            <label>Password<input data-field="auth-password" data-focus-key="auth-password" type="password" autocomplete="${state.authMode === "signin" ? "current-password" : "new-password"}" value="${escapeHtml(state.password)}" minlength="6" required></label>
+            <button class="flip-login-submit" type="submit" ${state.loading.auth ? "disabled" : ""}>${state.loading.auth ? "Please wait" : state.authMode === "signin" ? "Login" : "Create account"}</button>
+          </form>
+        </section>
+      </main>
+    `;
+  }
+
   return `
-    <main class="login-page">
-      <section class="login-hero">
-        <a class="brand-link login-brand" href="/index.html">
-          <span class="brand-mark">S</span>
-          <span class="brand-text">Flipkart</span>
+    <main class="login-page flip-login-page">
+      <header class="flip-login-header">
+        <a class="flip-login-close" href="/index.html" aria-label="Close login">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
         </a>
-        <div>
-          <p class="eyebrow">Online shopping</p>
-          <h1>Sign in to shop faster</h1>
-          <p>Your cart, orders and cached data stay connected to your account.</p>
-        </div>
+        <a class="flip-login-brand" href="/index.html" aria-label="Flipkart home">
+          <span>Flipkart</span><i aria-hidden="true">f</i>
+        </a>
+      </header>
+
+      <section class="flip-login-sheet" aria-labelledby="loginTitle">
+        <h1 id="loginTitle">Log in for the best experience</h1>
+        <p>Enter your phone number to continue</p>
+        <label class="phone-field">
+          <span>Phone Number</span>
+          <div class="phone-input">
+            <b>+91</b>
+            <input data-focus-key="phone-login" type="tel" inputmode="numeric" autocomplete="tel" aria-label="Phone number">
+          </div>
+        </label>
+        <button class="flip-email-link" type="button" data-action="login-view" data-view="email">Use Email-ID</button>
+        <p class="login-consent">By continuing, you confirm that you are above 18 years of age, and you agree to the Flipkart's <a href="/login.html">Terms of Use</a> and <a href="/login.html">Privacy Policy</a></p>
       </section>
 
-      <section class="login-card" aria-labelledby="loginTitle">
-        <p class="eyebrow">Account</p>
-        <h2 id="loginTitle">${state.authMode === "signin" ? "Login" : "Create account"}</h2>
-        ${renderMessage()}
-        <div class="auth-tabs">
-          <button class="${state.authMode === "signin" ? "active" : ""}" type="button" data-action="auth-mode" data-mode="signin">Login</button>
-          <button class="${state.authMode === "signup" ? "active" : ""}" type="button" data-action="auth-mode" data-mode="signup">Signup</button>
-        </div>
-        <form class="auth-form" data-form="auth">
-          <label>Email<input data-field="auth-email" data-focus-key="auth-email" type="email" autocomplete="email" value="${escapeHtml(state.email)}" required></label>
-          <label>Password<input data-field="auth-password" data-focus-key="auth-password" type="password" autocomplete="${state.authMode === "signin" ? "current-password" : "new-password"}" value="${escapeHtml(state.password)}" minlength="6" required></label>
-          <button class="btn primary wide" type="submit" ${state.loading.auth ? "disabled" : ""}>${state.loading.auth ? "Please wait" : state.authMode === "signin" ? "Login" : "Create account"}</button>
-        </form>
-      </section>
+      <div class="flip-login-bottom">
+        <button class="flip-login-continue" type="button" disabled>Continue</button>
+      </div>
     </main>
   `;
 }
@@ -1860,6 +1891,12 @@ app.addEventListener("click", async (event) => {
   const { action } = button.dataset;
   if (action === "auth-mode") {
     state.authMode = button.dataset.mode || "signin";
+    state.loginView = "email";
+    clearMessage();
+    render();
+  }
+  if (action === "login-view") {
+    state.loginView = button.dataset.view || "phone";
     clearMessage();
     render();
   }
