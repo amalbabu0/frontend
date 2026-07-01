@@ -786,6 +786,19 @@ async function buyNow(productId) {
   }
 }
 
+function goToPayment() {
+  clearMessage();
+  if (!isSignedIn()) {
+    window.location.href = `/login/?next=${encodeURIComponent("/user/")}`;
+    return;
+  }
+  if (!state.cart.length) {
+    setMessage("Add an item before continuing to payment.", "error");
+    return;
+  }
+  window.location.href = "/payment/";
+}
+
 async function updateQuantity(productId, direction) {
   clearMessage();
   const nextCart = state.cart
@@ -1023,21 +1036,23 @@ function renderMonitoringBottomNav() {
 }
 
 function renderBottomNav() {
+  const homeHref = isSignedIn() ? "/user/" : "/";
   return `
     <nav class="bottom-nav module-bottom-nav" aria-label="Customer navigation">
-      ${bottomNavLink("/", "home", "Home", "home")}
+      ${bottomNavLink(homeHref, "home", "Home", ["home", "user"])}
       ${bottomNavLink("/categories/", "categories", "Categories", "categories")}
-      ${bottomNavLink("/account/", "account", "Account", ["account", "user", "orders", "cache"])}
+      ${bottomNavLink("/account/", "account", "Account", ["account", "orders", "cache"])}
       ${bottomNavLink("/cart/", "cart", "Cart", ["publicCart", "cart"], cartCount() ? String(cartCount()) : "")}
     </nav>
   `;
 }
 
 function renderHeader() {
+  const homeHref = isSignedIn() ? "/user/" : "/";
   return `
     <header class="top-header customer-header">
       <div class="brand-tabs" aria-label="zaki services">
-        <a class="brand-tab primary" href="/" aria-label="zaki home">
+        <a class="brand-tab primary" href="${homeHref}" aria-label="zaki home">
           <span class="flip-mark">z</span>
           <span class="brand-stack"><span>zaki</span><small>Explore Plus</small></span>
         </a>
@@ -1341,7 +1356,108 @@ function renderAccountListRow([icon, title, subtitle]) {
   `;
 }
 
+function currentUserName() {
+  const metadata = state.session?.user?.user_metadata || {};
+  if (metadata.full_name || metadata.name) {
+    return metadata.full_name || metadata.name;
+  }
+  const email = currentUserEmail();
+  if (!email) {
+    return "Amal Babu";
+  }
+  const localPart = email.split("@")[0].replace(/[._-]+/g, " ").replace(/\d+/g, "").trim();
+  if (!localPart || localPart.toLowerCase().includes("amalbabu")) {
+    return "Amal Babu";
+  }
+  return localPart.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function renderSignedAccountTile(icon, label, href) {
+  return `
+    <a class="signed-account-tile" href="${href}">
+      <span class="account-row-icon">${renderAccountIcon(icon)}</span>
+      <strong>${escapeHtml(label)}</strong>
+    </a>
+  `;
+}
+
+function renderSignedAccountRow([icon, title, subtitle, href = "/account/"]) {
+  return `
+    <a class="account-list-row" href="${href}">
+      <span class="account-row-icon">${renderAccountIcon(icon)}</span>
+      <span>
+        <strong>${escapeHtml(title)}</strong>
+        ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ""}
+      </span>
+      <svg class="account-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+    </a>
+  `;
+}
+
+function renderRecentlyViewedStore([title, image]) {
+  return `
+    <a class="recent-store-card" href="/categories/">
+      <img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy">
+    </a>
+  `;
+}
+
+function renderSignedInAccountPage() {
+  const financeRows = [
+    ["card", "Pre-Approved Supermoney Credit Card", "1% cashback on UPI & Non-UPI | 100% Approval | Lifetime Free"],
+    ["card", "Flipkart EMI - Only For You!", "Unlock Rs1 lakh | No Cost EMI"],
+    ["document", "Apply Now for Flipkart SBI Credit Card", "5% Cashback | Rs750 zaki Gift Card & Rs500 Cleartrip Voucher"]
+  ];
+  const recentlyViewedStores = [
+    ["Bike store", "https://images.unsplash.com/photo-1558981852-426c6c22a060?auto=format&fit=crop&w=260&q=80"],
+    ["Car accessories", "https://images.unsplash.com/photo-1549927681-0b673b8243ab?auto=format&fit=crop&w=260&q=80"],
+    ["Home essentials", "https://images.unsplash.com/photo-1531884070720-875c7622d4c6?auto=format&fit=crop&w=260&q=80"],
+    ["Furniture", "https://images.unsplash.com/photo-1567016432779-094069958ea5?auto=format&fit=crop&w=260&q=80"]
+  ];
+  return `
+    <main class="clone-page account-page signed-account-page">
+      <section class="signed-profile-card">
+        <div>
+          <h1>${escapeHtml(currentUserName())}</h1>
+          <p>Enjoy FREE YouTube Premium, Early Access to sale and more with Black.</p>
+          <a href="/account/">Explore BLACK</a>
+        </div>
+        <span class="supercoin-pill">0</span>
+      </section>
+
+      <section class="signed-account-grid" aria-label="Account shortcuts">
+        ${renderSignedAccountTile("shop", "Orders", "/user/orders/")}
+        ${renderSignedAccountTile("help", "Wishlist", "/categories/")}
+        ${renderSignedAccountTile("document", "Coupons", "/categories/")}
+        ${renderSignedAccountTile("bell", "Help Center", "/account/")}
+      </section>
+
+      <section class="account-section signed-finance-section">
+        <h2>Finance Options</h2>
+        ${financeRows.map(renderSignedAccountRow).join("")}
+      </section>
+
+      <section class="account-section signed-finance-section">
+        <h2>Finance On UPI</h2>
+        ${renderSignedAccountRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate FK UPI and pay in 3 months"])}
+      </section>
+
+      <section class="account-section recent-stores-section">
+        <h2>Recently Viewed Stores</h2>
+        <div class="recent-store-strip">
+          ${recentlyViewedStores.map(renderRecentlyViewedStore).join("")}
+        </div>
+      </section>
+    </main>
+    ${renderBottomNav()}
+  `;
+}
+
 function renderAccountPage() {
+  if (isSignedIn()) {
+    return renderSignedInAccountPage();
+  }
+
   return `
     <main class="clone-page account-page">
       ${renderCloneBackBar("Account")}
@@ -1476,7 +1592,7 @@ function renderFilledCartItem(item) {
       <div class="filled-cart-actions">
         <button type="button">Save for later</button>
         <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(-quantity)}">Remove</button>
-        <button type="button" data-action="submit-order" data-status="success">Buy this now</button>
+        <button type="button" data-action="go-payment">Buy this now</button>
       </div>
     </article>
   `;
@@ -1499,10 +1615,9 @@ function renderFilledCartPage() {
       <section class="cart-price-card" aria-labelledby="priceDetailsTitle">
         <h2 id="priceDetailsTitle">Price Details</h2>
         <div class="cart-price-lines">
-          <div><span>Price (${cartCount()} item${cartCount() === 1 ? "" : "s"})</span><strong>${formatMoney(summary.pricePaise)}</strong></div>
-          <div><span>Discount</span><strong class="saving">- ${formatMoney(summary.discountPaise)}</strong></div>
-          <div><span>Coupons for you</span><strong class="saving">- ${formatMoney(summary.couponPaise)}</strong></div>
-          <div><span>Platform Fee</span><strong>${formatMoney(summary.platformFeePaise)}</strong></div>
+          <div><span>MRP (incl. of all taxes)</span><strong>${formatMoney(summary.pricePaise)}</strong></div>
+          <div><span>Fees</span><strong>${formatMoney(summary.platformFeePaise)}</strong></div>
+          <div><span>Discounts</span><strong class="saving">${formatMoney(summary.discountPaise + summary.couponPaise)}</strong></div>
         </div>
         <div class="cart-price-total">
           <span>Total Amount</span>
@@ -1520,7 +1635,7 @@ function renderFilledCartPage() {
           <s>${formatMoney(summary.pricePaise)}</s>
           <strong>${formatMoney(summary.totalPaise)}</strong>
         </div>
-        <button type="button" data-action="submit-order" data-status="success" ${state.loading.action === "success" ? "disabled" : ""}>Place Order</button>
+        <button type="button" data-action="go-payment">Place Order</button>
       </div>
     </main>
     ${renderBottomNav()}
@@ -2145,23 +2260,57 @@ function renderModuleShell(kind, title, description, metrics, content) {
   `;
 }
 
-function renderUserModulePage() {
-  const latestOrder = state.orders[0];
-  const metrics = [
-    renderModuleMetric("Signed in as", currentUserEmail() || "Unknown", "Supabase session"),
-    renderModuleMetric("Cart", `${cartCount()} items`, formatMoney(cartTotalPaise())),
-    renderModuleMetric("Orders", String(state.orders.length), `${statusCount("success")} successful`),
-    renderModuleMetric("Cache", cacheConfigured() ? "Online" : "Check", state.cache?.message || "Waiting")
-  ].join("");
-  const content = `
-    <section class="module-grid two">
-      ${renderModuleCard("Shopping profile", "Manage the customer journey from browsing products to cart and order history.", `<a class="btn primary" href="/">Shop products</a>`)}
-      ${renderModuleCard("Current cart", `${cartCount()} items are saved in this user's Upstash cart cache.`, `<a class="btn ghost" href="/user/cart/">Open cart</a>`)}
-      ${renderModuleCard("Latest order", latestOrder ? `${escapeHtml(latestOrder.id)} is currently ${escapeHtml(latestOrder.status)}.` : "No orders created yet.", `<a class="btn ghost" href="/user/orders/">View orders</a>`)}
-      ${renderModuleCard("Customer cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/user/cache/">View cache</a>`)}
-    </section>
+function renderSignedHomeSuggestionCard(product, index) {
+  return `
+    <a class="signed-suggestion-card" href="${escapeHtml(productDetailHref(product))}">
+      <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
+      <span>${escapeHtml(product.rating || "4.3")} star</span>
+      <b>${index % 2 ? "Deal" : "New"}</b>
+    </a>
   `;
-  return renderModuleShell("user", "Customer module", "Customer home for account, cart, checkout and order history.", metrics, content);
+}
+
+function renderUserModulePage() {
+  const products = visibleProducts().slice(0, 6);
+  return `
+    ${renderHeader()}
+    ${renderCategoryStrip()}
+    <main class="home-layout market-home zaki-shell signed-home-page">
+      <section class="promo-grid flip-hero" aria-label="Featured offers">
+        <button class="hero-arrow prev" type="button" aria-label="Previous offer">&lsaquo;</button>
+        ${promoTiles.map((tile, index) => `
+          <article class="promo-card ${escapeHtml(tile.tone)} ${index === 0 ? "active" : ""}">
+            <img src="${escapeHtml(tile.image)}" alt="${escapeHtml(tile.title)}" loading="${index === 0 ? "eager" : "lazy"}">
+            <div>
+              <span>${escapeHtml(tile.badge)}</span>
+              <h1>${escapeHtml(tile.title)}</h1>
+              <p>${escapeHtml(tile.subtitle)}</p>
+              <b>${escapeHtml(tile.cta || "Shop Now")}</b>
+            </div>
+          </article>
+        `).join("")}
+        <button class="hero-arrow next" type="button" aria-label="Next offer">&rsaquo;</button>
+      </section>
+      <div class="mobile-promo-dots" aria-hidden="true"><span></span><span class="active"></span><span></span><span></span><span></span></div>
+
+      <section class="mobile-deal-strip" aria-label="Hot deals">
+        ${mobileDealItems.map(renderMobileDealCard).join("")}
+      </section>
+
+      <section class="signed-suggested-section" aria-labelledby="signedSuggestedTitle">
+        <div class="signed-section-heading">
+          <h2 id="signedSuggestedTitle">Suggested For You</h2>
+          <a href="/categories/" aria-label="View all suggested products">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </a>
+        </div>
+        <div class="signed-suggested-grid">
+          ${products.map(renderSignedHomeSuggestionCard).join("")}
+        </div>
+      </section>
+    </main>
+    ${renderBottomNav()}
+  `;
 }
 
 function renderOwnerModulePage() {
@@ -2570,6 +2719,9 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "submit-order") {
     await submitOrder(button.dataset.status);
+  }
+  if (action === "go-payment") {
+    goToPayment();
   }
   if (action === "order-status") {
     await updateOrderStatus(button.dataset.orderId, button.dataset.status);
