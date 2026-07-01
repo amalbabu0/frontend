@@ -3011,6 +3011,10 @@ body[data-page="home"] {
   padding: 16px;
 }
 
+.mobile-product-heading {
+  display: none;
+}
+
 .market-product-grid {
   padding: 12px;
 }
@@ -4435,6 +4439,29 @@ body[data-page="categories"] .bottom-nav {
   body[data-page="home"] .mobile-deal-strip,
   body[data-page="home"] .mobile-spotlight {
     display: grid;
+  }
+
+  body[data-page="home"] .mobile-product-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    padding: 12px 4px 8px;
+  }
+
+  body[data-page="home"] .mobile-product-heading h2 {
+    margin: 0;
+    color: #172337;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  body[data-page="home"] .mobile-product-heading a {
+    color: var(--fk-blue);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
   }
 
   body[data-page="home"] .mobile-deal-card {

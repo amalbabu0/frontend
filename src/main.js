@@ -58,6 +58,105 @@ const fallbackImages = [
   "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=900&q=80"
 ];
 
+const starterProducts = [
+  {
+    id: "pulse-headphones",
+    name: "Pulse Wireless Headphones",
+    description: "Noise-softening over-ear audio with 40 hours of battery.",
+    pricePaise: 249900,
+    badge: "Best Deal",
+    category: "Electronics",
+    rating: "4.8",
+    stock: 64,
+    delivery: "Today",
+    channel: "zaki Assured",
+    sku: "SM-1001",
+    featured: true,
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80",
+    alt: "Black wireless headphones on a bright background"
+  },
+  {
+    id: "loop-smartwatch",
+    name: "Loop Smart Watch",
+    description: "Fitness tracking with calls, steps and sleep insights.",
+    pricePaise: 329900,
+    badge: "Trending",
+    category: "Electronics",
+    rating: "4.7",
+    stock: 72,
+    delivery: "Tomorrow",
+    channel: "zaki Assured",
+    sku: "SM-1002",
+    featured: true,
+    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80",
+    alt: "Smart watch with a clean strap on a tabletop"
+  },
+  {
+    id: "city-backpack",
+    name: "City Day Backpack",
+    description: "Water-resistant daily bag with a padded laptop section.",
+    pricePaise: 149900,
+    badge: "Travel",
+    category: "Bags",
+    rating: "4.5",
+    stock: 51,
+    delivery: "Today",
+    channel: "Warehouse",
+    sku: "SM-2001",
+    featured: true,
+    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=80",
+    alt: "Brown backpack photographed in natural light"
+  },
+  {
+    id: "nova-sneakers",
+    name: "Nova Run Sneakers",
+    description: "Cushioned everyday sneakers with breathable knit support.",
+    pricePaise: 219900,
+    badge: "Min. 50% Off",
+    category: "Footwear",
+    rating: "4.6",
+    stock: 86,
+    delivery: "Tomorrow",
+    channel: "zaki Assured",
+    sku: "SM-3001",
+    featured: true,
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80",
+    alt: "Red running shoes floating above a red surface"
+  },
+  {
+    id: "arc-keyboard",
+    name: "Arc Mechanical Keyboard",
+    description: "Compact hot-swap keyboard with quiet tactile switches.",
+    pricePaise: 459900,
+    badge: "Workstation",
+    category: "Electronics",
+    rating: "4.9",
+    stock: 43,
+    delivery: "Today",
+    channel: "Marketplace",
+    sku: "SM-1003",
+    featured: false,
+    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=80",
+    alt: "Mechanical keyboard on a desk"
+  },
+  {
+    id: "halo-desk-lamp",
+    name: "Halo Desk Lamp",
+    description: "Dimmable LED lamp with wireless phone charging base.",
+    pricePaise: 189900,
+    badge: "Home",
+    category: "Home",
+    rating: "4.4",
+    stock: 38,
+    delivery: "Tomorrow",
+    channel: "Marketplace",
+    sku: "SM-4001",
+    featured: false,
+    image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=80",
+    alt: "Modern desk lamp glowing on a table"
+  }
+];
+
 const storefrontCategories = [
   ["For You", "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=160&q=80"],
   ["Fashion", "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=160&q=80"],
@@ -322,12 +421,25 @@ function enrichProduct(product, index) {
   };
 }
 
+let starterCatalog = null;
+
+function starterCatalogProducts() {
+  if (!starterCatalog) {
+    starterCatalog = starterProducts.map(enrichProduct);
+  }
+  return starterCatalog;
+}
+
+function catalogProducts() {
+  return state.products.length ? state.products : starterCatalogProducts();
+}
+
 function categories() {
-  return ["all", ...new Set(state.products.map((product) => product.category || "General"))];
+  return ["all", ...new Set(catalogProducts().map((product) => product.category || "General"))];
 }
 
 function productById(productId) {
-  return state.products.find((product) => product.id === productId);
+  return catalogProducts().find((product) => product.id === productId);
 }
 
 function productDetailHref(product) {
@@ -351,12 +463,13 @@ function productListPricePaise(product) {
 
 function currentProduct() {
   const productId = new URLSearchParams(window.location.search).get("id");
-  return productById(productId) || state.products[0] || null;
+  return productById(productId) || catalogProducts()[0] || null;
 }
 
 function relatedProducts(product, limit = 8) {
-  const sameCategory = state.products.filter((item) => item.id !== product?.id && item.category === product?.category);
-  const otherProducts = state.products.filter((item) => item.id !== product?.id && item.category !== product?.category);
+  const products = catalogProducts();
+  const sameCategory = products.filter((item) => item.id !== product?.id && item.category === product?.category);
+  const otherProducts = products.filter((item) => item.id !== product?.id && item.category !== product?.category);
   return [...sameCategory, ...otherProducts].slice(0, limit);
 }
 
@@ -380,6 +493,9 @@ function productCacheLabel() {
   if (!state.productCache) {
     return "Loading";
   }
+  if (state.productCache.source === "starter-catalog") {
+    return "Featured picks";
+  }
   if (state.productCache.hit) {
     return "Cache hit";
   }
@@ -391,7 +507,7 @@ function productCacheLabel() {
 
 function visibleProducts() {
   const query = state.filters.query.trim().toLowerCase();
-  const filtered = state.products.filter((product) => {
+  const filtered = catalogProducts().filter((product) => {
     const text = [product.name, product.description, product.category, product.badge, product.sku]
       .join(" ")
       .toLowerCase();
@@ -440,7 +556,11 @@ async function loadProducts() {
     state.products = (data.products || []).map(enrichProduct);
     state.productCache = data.cache || {};
   } catch (error) {
-    setMessage(error.message, "error");
+    state.products = starterCatalogProducts();
+    state.productCache = { enabled: false, source: "starter-catalog", hit: false };
+    if (page !== "home" && page !== "categories" && page !== "product") {
+      setMessage(error.message, "error");
+    }
   } finally {
     state.loading.products = false;
     render();
@@ -1398,7 +1518,7 @@ function renderProductBoughtTogether(product, bundleProduct) {
 function renderProductPage() {
   const product = currentProduct();
   const recommendations = product ? relatedProducts(product, 8) : [];
-  const recentlyViewed = state.products.filter((item) => item.id !== product?.id).slice().reverse().slice(0, 4);
+  const recentlyViewed = catalogProducts().filter((item) => item.id !== product?.id).slice().reverse().slice(0, 4);
   const exploreProducts = [...recommendations].reverse().slice(0, 4);
 
   if (!product) {
@@ -1506,7 +1626,7 @@ function renderHomePage() {
 
       <section id="featured-products" class="market-toolbar">
         <div>
-          <h2>People also viewed</h2>
+          <h2>Products for you</h2>
           <p>${escapeHtml(productCacheLabel())} - ${products.length} products showing</p>
         </div>
         <div class="toolbar-controls">
@@ -1519,6 +1639,11 @@ function renderHomePage() {
           </select>
           <button class="btn ghost" type="button" data-action="reload-products">Refresh</button>
         </div>
+      </section>
+
+      <section class="mobile-product-heading" aria-label="Products for you">
+        <h2>Products for you</h2>
+        <a href="/categories/">View all</a>
       </section>
 
       ${renderMessage()}
