@@ -23,6 +23,10 @@
       "destination": "/product/index.html"
     },
     {
+      "source": "/payment",
+      "destination": "/payment/index.html"
+    },
+    {
       "source": "/user/cart",
       "destination": "/user/cart/index.html"
     },

@@ -2,9 +2,10 @@ import { hasSupabaseConfig, supabase } from "./lib/supabase.js";
 import "./app.css";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
+const razorpayPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL || "https://razorpay.com/";
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["cart", "orders", "cache", "user"]);
+const protectedPages = new Set(["cart", "orders", "cache", "user", "payment"]);
 const publicPages = new Set(["home", "categories", "account", "publicCart", "product"]);
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
@@ -672,7 +673,7 @@ async function loadPageData() {
     return;
   }
 
-  if (page === "cart") {
+  if (page === "cart" || page === "payment") {
     await Promise.all([loadProducts(), loadCart(), loadCache()]);
   }
   if (page === "orders") {
@@ -698,16 +699,10 @@ async function saveCart(nextCart) {
   render();
 }
 
-async function addToCart(productId, goToCart = false) {
-  clearMessage();
-  if (!isSignedIn()) {
-    const nextUrl = goToCart ? "/cart/" : "/";
-    window.location.href = `/login/?next=${encodeURIComponent(nextUrl)}`;
-    return;
-  }
+function cartWithAddedProduct(productId) {
   const product = productById(productId);
   if (!product) {
-    return;
+    return null;
   }
 
   const existing = state.cart.find((item) => item.productId === productId);
@@ -730,6 +725,23 @@ async function addToCart(productId, goToCart = false) {
         }
       ];
 
+  return { product, nextCart };
+}
+
+async function addToCart(productId, goToCart = false) {
+  clearMessage();
+  if (!isSignedIn()) {
+    const nextUrl = goToCart ? "/cart/" : "/";
+    window.location.href = `/login/?next=${encodeURIComponent(nextUrl)}`;
+    return;
+  }
+
+  const preparedCart = cartWithAddedProduct(productId);
+  if (!preparedCart) {
+    return;
+  }
+  const { product, nextCart } = preparedCart;
+
   try {
     state.loading.action = productId;
     render();
@@ -739,6 +751,32 @@ async function addToCart(productId, goToCart = false) {
       return;
     }
     setMessage(`${product.name} added to cart.`);
+  } catch (error) {
+    setMessage(error.message, "error");
+    await loadCart();
+  } finally {
+    state.loading.action = "";
+    render();
+  }
+}
+
+async function buyNow(productId) {
+  clearMessage();
+  if (!isSignedIn()) {
+    window.location.href = `/login/?next=${encodeURIComponent("/user/")}`;
+    return;
+  }
+
+  const preparedCart = cartWithAddedProduct(productId);
+  if (!preparedCart) {
+    return;
+  }
+
+  try {
+    state.loading.action = productId;
+    render();
+    await saveCart(preparedCart.nextCart);
+    window.location.href = `/payment/?productId=${encodeURIComponent(productId)}`;
   } catch (error) {
     setMessage(error.message, "error");
     await loadCart();
@@ -890,6 +928,26 @@ async function submitAuth() {
     state.loading.auth = false;
     render();
   }
+}
+
+async function submitPaymentAddress(form) {
+  clearMessage();
+  if (!state.cart.length) {
+    setMessage("Add an item before continuing to payment.", "error");
+    return;
+  }
+
+  const formData = new FormData(form);
+  const address = Object.fromEntries(formData.entries());
+  try {
+    sessionStorage.setItem("zakiDeliveryAddress", JSON.stringify(address));
+  } catch {
+    // Storage can be unavailable in stricter browser modes; checkout can still continue.
+  }
+
+  state.loading.action = "payment";
+  render();
+  window.location.href = razorpayPaymentUrl;
 }
 
 async function signOut() {
@@ -1466,6 +1524,114 @@ function renderFilledCartPage() {
       </div>
     </main>
     ${renderBottomNav()}
+  `;
+}
+
+function savedPaymentAddress() {
+  try {
+    return JSON.parse(sessionStorage.getItem("zakiDeliveryAddress") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function renderPaymentSummaryItem(item) {
+  const product = cartProductForItem(item);
+  return `
+    <article class="payment-summary-item">
+      <img src="${escapeHtml(product.image || fallbackImages[0])}" alt="${escapeHtml(product.alt || product.name)}" loading="lazy">
+      <div>
+        <strong>${escapeHtml(item.name || product.name)}</strong>
+        <span>Qty ${escapeHtml(item.quantity || 1)} | ${escapeHtml(product.channel || "zaki Assured")}</span>
+      </div>
+      <b>${formatMoney(item.lineTotalPaise || item.pricePaise)}</b>
+    </article>
+  `;
+}
+
+function renderPaymentPage() {
+  const summary = cartPriceSummary();
+  const address = savedPaymentAddress();
+
+  if (!state.cart.length) {
+    return `
+      <main class="payment-page">
+        ${renderCloneBackBar("Payment")}
+        <section class="payment-empty">
+          <h1>No item selected</h1>
+          <p>Add a product with Buy now before continuing to payment.</p>
+          <a href="/">Continue shopping</a>
+        </section>
+      </main>
+    `;
+  }
+
+  return `
+    <main class="payment-page">
+      ${renderCloneBackBar("Payment")}
+      <section class="payment-step-card">
+        <span>1</span>
+        <div>
+          <h1>Delivery address</h1>
+          <p>Enter the address where this order should be delivered.</p>
+        </div>
+      </section>
+
+      ${renderMessage()}
+
+      <form class="payment-address-form" data-form="payment-address">
+        <label>Full name
+          <input name="fullName" data-focus-key="payment-name" autocomplete="name" value="${escapeHtml(address.fullName || currentUserEmail().split("@")[0] || "")}" required>
+        </label>
+        <label>Phone number
+          <input name="phone" data-focus-key="payment-phone" type="tel" autocomplete="tel" value="${escapeHtml(address.phone || "")}" required>
+        </label>
+        <label>Address
+          <textarea name="address" data-focus-key="payment-address" autocomplete="street-address" required>${escapeHtml(address.address || "")}</textarea>
+        </label>
+        <div class="payment-form-grid">
+          <label>Pincode
+            <input name="pincode" data-focus-key="payment-pincode" inputmode="numeric" autocomplete="postal-code" value="${escapeHtml(address.pincode || "")}" required>
+          </label>
+          <label>City
+            <input name="city" data-focus-key="payment-city" autocomplete="address-level2" value="${escapeHtml(address.city || "")}" required>
+          </label>
+        </div>
+        <label>State
+          <input name="state" data-focus-key="payment-state" autocomplete="address-level1" value="${escapeHtml(address.state || "")}" required>
+        </label>
+
+        <section class="payment-summary-card" aria-labelledby="paymentSummaryTitle">
+          <div class="payment-summary-heading">
+            <span>2</span>
+            <div>
+              <h2 id="paymentSummaryTitle">Order summary</h2>
+              <p>${cartCount()} item${cartCount() === 1 ? "" : "s"} ready for payment</p>
+            </div>
+          </div>
+          <div class="payment-summary-list">
+            ${state.cart.map(renderPaymentSummaryItem).join("")}
+          </div>
+          <div class="payment-total-row"><span>Total payable</span><strong>${formatMoney(summary.totalPaise)}</strong></div>
+        </section>
+
+        <section class="payment-razorpay-card">
+          <span aria-hidden="true">R</span>
+          <div>
+            <h2>Razorpay Secure Checkout</h2>
+            <p>Continue to Razorpay to complete this payment.</p>
+          </div>
+        </section>
+
+        <div class="payment-action-bar">
+          <div>
+            <small>Total</small>
+            <strong>${formatMoney(summary.totalPaise)}</strong>
+          </div>
+          <button type="submit" ${state.loading.action === "payment" ? "disabled" : ""}>Continue to Razorpay</button>
+        </div>
+      </form>
+    </main>
   `;
 }
 
@@ -2300,6 +2466,8 @@ function render() {
     app.innerHTML = renderCachePage();
   } else if (page === "user") {
     app.innerHTML = renderUserModulePage();
+  } else if (page === "payment") {
+    app.innerHTML = renderPaymentPage();
   } else if (page === "categories") {
     app.innerHTML = renderCategoriesPage();
   } else if (page === "account") {
@@ -2330,6 +2498,9 @@ app.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (form.dataset.form === "auth") {
     await submitAuth();
+  }
+  if (form.dataset.form === "payment-address") {
+    await submitPaymentAddress(form);
   }
 });
 
@@ -2389,7 +2560,7 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "buy-now") {
     event.preventDefault();
-    await addToCart(button.dataset.productId, true);
+    await buyNow(button.dataset.productId);
   }
   if (action === "quantity") {
     await updateQuantity(button.dataset.productId, Number(button.dataset.direction));
