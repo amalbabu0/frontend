@@ -2615,6 +2615,11 @@ async function bootstrap() {
     return;
   }
 
+  if (page === "home" && state.session) {
+    window.location.href = "/user/";
+    return;
+  }
+
   if (protectedPages.has(page) && !state.session) {
     window.location.href = `/login/?next=${encodeURIComponent(window.location.pathname)}`;
     return;
@@ -2627,6 +2632,10 @@ async function bootstrap() {
     state.session = nextSession;
     if (!nextSession && protectedPages.has(page)) {
       window.location.href = "/login/";
+      return;
+    }
+    if (nextSession && page === "home") {
+      window.location.href = "/user/";
       return;
     }
     if (nextSession && page !== "login") {
