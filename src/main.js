@@ -13,7 +13,7 @@ const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 const state = {
   authReady: false,
   authMode: "signin",
-  loginView: "phone",
+  loginView: "email",
   email: "",
   password: "",
   session: null,
