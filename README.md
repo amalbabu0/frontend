@@ -39,9 +39,10 @@ Protected by Supabase session: /user/*, /owner/*, /admin/*, /development/*
 VITE_API_BASE_URL=http://localhost:8000
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_RAZORPAY_PAYMENT_URL=https://rzp.io/rzp/optional-payment-link-fallback
 ```
 
-For Vercel production, set `VITE_API_BASE_URL` to the deployed backend URL.
+For Vercel production, set `VITE_API_BASE_URL` to the deployed backend URL. Razorpay key ID and key secret belong in the backend Vercel project; `VITE_RAZORPAY_PAYMENT_URL` is only an optional fallback payment link.
 
 ## Run
 

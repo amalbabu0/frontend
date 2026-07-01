@@ -3,6 +3,7 @@ import "./app.css";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const razorpayPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL || "https://razorpay.com/";
+const razorpayCheckoutScript = "https://checkout.razorpay.com/v1/checkout.js";
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
 const protectedPages = new Set(["cart", "orders", "cache", "user", "payment"]);
@@ -42,6 +43,8 @@ const state = {
     action: ""
   }
 };
+
+let razorpayCheckoutPromise = null;
 
 const moneyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -949,6 +952,100 @@ async function submitAuth() {
   }
 }
 
+function hasPaymentLinkFallback() {
+  return Boolean(razorpayPaymentUrl && razorpayPaymentUrl !== "https://razorpay.com/");
+}
+
+function loadRazorpayCheckout() {
+  if (window.Razorpay) {
+    return Promise.resolve();
+  }
+
+  if (!razorpayCheckoutPromise) {
+    razorpayCheckoutPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = razorpayCheckoutScript;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("Could not load Razorpay Checkout."));
+      document.head.appendChild(script);
+    });
+  }
+
+  return razorpayCheckoutPromise;
+}
+
+function createRazorpayOptions(orderData, address, resolve, reject) {
+  let settled = false;
+  const finish = (callback) => {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    callback();
+  };
+
+  return {
+    key: orderData.keyId,
+    amount: orderData.order.amount,
+    currency: orderData.order.currency || "INR",
+    name: "zaki",
+    description: `${cartCount()} item${cartCount() === 1 ? "" : "s"} from your cart`,
+    order_id: orderData.order.id,
+    prefill: {
+      name: address.fullName || currentUserName(),
+      email: currentUserEmail(),
+      contact: address.phone || ""
+    },
+    notes: {
+      city: address.city || "",
+      pincode: address.pincode || ""
+    },
+    theme: {
+      color: "#2874f0"
+    },
+    handler: async (response) => {
+      try {
+        const data = await apiRequest("/api/payments/razorpay/verify", {
+          method: "POST",
+          body: JSON.stringify({
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature
+          })
+        });
+        finish(() => resolve(data));
+      } catch (error) {
+        finish(() => reject(error));
+      }
+    },
+    modal: {
+      ondismiss: () => finish(() => reject(new Error("Payment cancelled before completion.")))
+    }
+  };
+}
+
+async function startRazorpayPayment(address) {
+  const orderData = await apiRequest("/api/payments/razorpay/order", {
+    method: "POST",
+    body: JSON.stringify({ address })
+  });
+  await loadRazorpayCheckout();
+
+  const data = await new Promise((resolve, reject) => {
+    const checkout = new window.Razorpay(createRazorpayOptions(orderData, address, resolve, reject));
+    checkout.on("payment.failed", (response) => {
+      const description = response?.error?.description || response?.error?.reason || "Payment failed.";
+      reject(new Error(description));
+    });
+    checkout.open();
+  });
+
+  state.cart = [];
+  state.orders = data.order ? [data.order, ...state.orders] : state.orders;
+  window.location.href = "/user/orders/";
+}
+
 async function submitPaymentAddress(form) {
   clearMessage();
   if (!state.cart.length) {
@@ -962,7 +1059,17 @@ async function submitPaymentAddress(form) {
 
   state.loading.action = "payment";
   render();
-  window.location.href = razorpayPaymentUrl;
+  try {
+    await startRazorpayPayment(address);
+  } catch (error) {
+    if (hasPaymentLinkFallback() && error.message.includes("Razorpay backend env vars are not configured")) {
+      window.location.href = razorpayPaymentUrl;
+      return;
+    }
+
+    state.loading.action = "";
+    setMessage(error.message, "error");
+  }
 }
 
 async function signOut() {
