@@ -1185,7 +1185,7 @@ select {
   padding: 0 12px;
 }
 
-/* Flipkart-style login screen */
+/* zaki-style login screen */
 body[data-page="login"] {
   background: #3f3449;
   color: #111111;
@@ -2558,7 +2558,7 @@ body[data-page="login"] .flip-login-page {
   }
 }
 
-/* Flipkart responsive clone */
+/* zaki responsive shopping UI */
 body[data-page="home"] {
   background: #f1f2f4;
 }
@@ -2739,7 +2739,7 @@ body[data-page="home"] {
   background: #f1f5ff;
 }
 
-.home-layout.market-home.flipkart-shell {
+.home-layout.market-home.zaki-shell {
   width: min(1600px, calc(100% - 32px));
   margin: 10px auto 0;
   padding-bottom: 20px;
@@ -3181,7 +3181,7 @@ body[data-page="home"] {
     border-radius: 7px;
   }
 
-  .home-layout.market-home.flipkart-shell {
+  .home-layout.market-home.zaki-shell {
     width: min(100% - 48px, 420px);
     margin: 0 auto 0;
     padding: 10px 12px 72px;
@@ -3263,7 +3263,7 @@ body[data-page="home"] {
   }
 }
 
-/* Flipkart clone accuracy polish */
+/* zaki shopping polish */
 body[data-page="home"] {
   --fk-blue: #2874f0;
   --fk-blue-soft: #f0f5ff;
@@ -3425,7 +3425,7 @@ body[data-page="home"] .market-category-icon {
   background: #f1f5ff;
 }
 
-body[data-page="home"] .home-layout.market-home.flipkart-shell {
+body[data-page="home"] .home-layout.market-home.zaki-shell {
   width: min(1600px, calc(100% - 32px));
   margin: 10px auto 0;
   padding-bottom: 20px;
@@ -4364,7 +4364,7 @@ body[data-page="categories"] .bottom-nav {
     border-radius: 7px;
   }
 
-  body[data-page="home"] .home-layout.market-home.flipkart-shell {
+  body[data-page="home"] .home-layout.market-home.zaki-shell {
     width: min(100% - 48px, 390px);
     margin: 0 auto;
     padding: 10px 12px 76px;
@@ -4495,7 +4495,7 @@ body[data-page="categories"] .bottom-nav {
     border-radius: 0;
   }
 
-  body[data-page="home"] .home-layout.market-home.flipkart-shell {
+  body[data-page="home"] .home-layout.market-home.zaki-shell {
     width: 100%;
     margin: 0;
     padding: 10px 10px 76px;

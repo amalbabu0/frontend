@@ -142,7 +142,7 @@ const categoryTryItems = [
   ["SuperCoin", "coin"],
   ["Join BLACK", "black"],
   ["Bills & Recharges", "bills"],
-  ["Flipkart Pay", "pay"],
+  ["zaki Pay", "pay"],
   ["Personal Loan", "loan"],
   ["GenZ trends", "genz"],
   ["Become a Seller", "seller"],
@@ -152,9 +152,9 @@ const categoryTryItems = [
 const categoryMoreItems = [
   ["Uber", "uber"],
   ["Pet Supplies", "pet"],
-  ["Flipkart Green", "green"],
-  ["Flipkart Samarth", "samarth"],
-  ["Flipkart Originals", "originals"],
+  ["zaki Green", "green"],
+  ["zaki Samarth", "samarth"],
+  ["zaki Originals", "originals"],
   ["SuperCoin Rewards", "rewards"],
   ["Next Gen Brands", "nextgen"]
 ];
@@ -757,9 +757,9 @@ function renderBoot() {
   return `
     <main class="boot-shell">
       <section class="boot-panel" aria-live="polite">
-        <div class="brand-mark">f</div>
+        <div class="brand-mark">z</div>
         <div>
-          <h1>Flipkart</h1>
+          <h1>zaki</h1>
           <p>Loading store.</p>
         </div>
       </section>
@@ -819,10 +819,10 @@ function renderBottomNav() {
 function renderHeader() {
   return `
     <header class="top-header customer-header">
-      <div class="brand-tabs" aria-label="Flipkart services">
-        <a class="brand-tab primary" href="/index.html" aria-label="Flipkart home">
-          <span class="flip-mark">f</span>
-          <span class="brand-stack"><span>Flipkart</span><small>Explore Plus</small></span>
+      <div class="brand-tabs" aria-label="zaki services">
+        <a class="brand-tab primary" href="/index.html" aria-label="zaki home">
+          <span class="flip-mark">z</span>
+          <span class="brand-stack"><span>zaki</span><small>Explore Plus</small></span>
         </a>
         <a class="brand-tab travel" href="/index.html#featured-products">
           <span class="travel-mark">Air</span>
@@ -963,10 +963,10 @@ function renderMarketProductCard(product) {
 }
 function renderFaqItems() {
   const faqs = [
-    ["Flipkart: India's Ultimate One-Stop Online Shopping Destination", "Browse mobiles, fashion, appliances, beauty, grocery, furniture and daily essentials from one responsive storefront."],
-    ["What Can You Buy from Flipkart?", "Shop latest gadgets, apparel, footwear, home decor, cookware, personal care, toys, books and more across curated category rails."],
+    ["zaki: India's Ultimate One-Stop Online Shopping Destination", "Browse mobiles, fashion, appliances, beauty, grocery, furniture and daily essentials from one responsive storefront."],
+    ["What Can You Buy from zaki?", "Shop latest gadgets, apparel, footwear, home decor, cookware, personal care, toys, books and more across curated category rails."],
     ["How does this clone behave?", "The page mirrors the public storefront layout for desktop and mobile views while keeping the existing cart and account links wired to this demo app."],
-    ["Are these real Flipkart assets?", "This local front end recreates the layout and visual rhythm with replacement imagery and demo content instead of copying private production assets."]
+    ["Are these real zaki assets?", "This local front end recreates the layout and visual rhythm with replacement imagery and demo content instead of copying private production assets."]
   ];
   return faqs.map(([question, answer]) => `
     <details class="faq-item">
@@ -1070,7 +1070,7 @@ function renderCategoriesPage() {
           </section>
 
           <section class="categories-section">
-            <h2>More on Flipkart</h2>
+            <h2>More on zaki</h2>
             <div class="category-try-grid category-more-grid">
               ${categoryMoreItems.map(renderCategoryTryCard).join("")}
             </div>
@@ -1136,11 +1136,11 @@ function renderAccountPage() {
 
       <section class="account-section">
         <h2>Finance On UPI</h2>
-        ${renderAccountListRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate FK UPI and pay in 3 months"])}
+        ${renderAccountListRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate zaki UPI and pay in 3 months"])}
       </section>
 
       <section class="account-section language-section">
-        <h2>Try Flipkart in your language</h2>
+        <h2>Try zaki in your language</h2>
         <div class="language-chip-row" aria-label="Language options">
           <a href="/login.html">हिंदी</a>
           <a href="/login.html">தமிழ்</a>
@@ -1156,8 +1156,8 @@ function renderAccountPage() {
       </section>
 
       <section class="account-section">
-        <h2>Earn with Flipkart</h2>
-        ${renderAccountListRow(["shop", "Sell on Flipkart", ""])}
+        <h2>Earn with zaki</h2>
+        ${renderAccountListRow(["shop", "Sell on zaki", ""])}
       </section>
 
       <section class="account-section">
@@ -1172,7 +1172,7 @@ function renderAccountPage() {
 function renderCartEmptyGraphic() {
   return `
     <div class="cart-empty-graphic" aria-hidden="true">
-      <span>f</span>
+      <span>z</span>
       <svg viewBox="0 0 160 110">
         <path d="M16 78h128"/>
         <path d="M42 36h14l13 44h48l12-32H64"/>
@@ -1222,7 +1222,7 @@ function renderHomePage() {
   return `
     ${renderHeader()}
     ${renderCategoryStrip()}
-    <main class="home-layout market-home flipkart-shell">
+    <main class="home-layout market-home zaki-shell">
       <section class="promo-grid flip-hero" aria-label="Featured offers">
         <button class="hero-arrow prev" type="button" aria-label="Previous offer">&lsaquo;</button>
         ${promoTiles.map((tile, index) => `
@@ -1291,7 +1291,7 @@ function renderHomePage() {
 
       <section class="market-faq" aria-labelledby="faqTitle">
         <div>
-          <h2 id="faqTitle">Flipkart - Your go-to place for Online Shopping</h2>
+          <h2 id="faqTitle">zaki - Your go-to place for Online Shopping</h2>
         </div>
         <div class="faq-list">
           ${renderFaqItems()}
@@ -1300,14 +1300,14 @@ function renderHomePage() {
     </main>
     <footer class="market-footer">
       <div class="footer-columns">
-        <section><h3>About</h3><a>Contact Us</a><a>About Us</a><a>Careers</a><a>Flipkart Stories</a></section>
+        <section><h3>About</h3><a>Contact Us</a><a>About Us</a><a>Careers</a><a>zaki Stories</a></section>
         <section><h3>Group Companies</h3><a>Myntra</a><a>Cleartrip</a><a>Shopsy</a></section>
         <section><h3>Help</h3><a>Payments</a><a>Shipping</a><a>Cancellation & Returns</a><a>FAQ</a></section>
         <section><h3>Consumer Policy</h3><a>Terms Of Use</a><a>Security</a><a>Privacy</a><a>Grievance Redressal</a></section>
-        <section><h3>Mail Us</h3><p>Flipkart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
-        <section><h3>Registered Office Address</h3><p>Flipkart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
+        <section><h3>Mail Us</h3><p>zaki Internet Private Limited, Bengaluru, Karnataka, India</p></section>
+        <section><h3>Registered Office Address</h3><p>zaki Internet Private Limited, Bengaluru, Karnataka, India</p></section>
       </div>
-      <div class="footer-bottom"><span>Become a Seller</span><span>Advertise</span><span>Gift Cards</span><span>Help Center</span><strong>2007-2026 Flipkart.com</strong></div>
+      <div class="footer-bottom"><span>Become a Seller</span><span>Advertise</span><span>Gift Cards</span><span>Help Center</span><strong>2026 zaki.com</strong></div>
     </footer>
     ${renderBottomNav()}
   `;
@@ -1716,8 +1716,8 @@ function renderLoginPage() {
           <a class="flip-login-close" href="/index.html" aria-label="Close login">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
           </a>
-          <a class="flip-login-brand" href="/index.html" aria-label="Flipkart home">
-            <span>Flipkart</span><i aria-hidden="true">f</i>
+          <a class="flip-login-brand" href="/index.html" aria-label="zaki home">
+            <span>zaki</span><i aria-hidden="true">z</i>
           </a>
         </header>
         <section class="flip-login-sheet flip-email-sheet" aria-labelledby="loginTitle">
@@ -1745,8 +1745,8 @@ function renderLoginPage() {
         <a class="flip-login-close" href="/index.html" aria-label="Close login">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
         </a>
-        <a class="flip-login-brand" href="/index.html" aria-label="Flipkart home">
-          <span>Flipkart</span><i aria-hidden="true">f</i>
+        <a class="flip-login-brand" href="/index.html" aria-label="zaki home">
+          <span>zaki</span><i aria-hidden="true">z</i>
         </a>
       </header>
 
@@ -1761,7 +1761,7 @@ function renderLoginPage() {
           </div>
         </label>
         <button class="flip-email-link" type="button" data-action="login-view" data-view="email">Use Email-ID</button>
-        <p class="login-consent">By continuing, you confirm that you are above 18 years of age, and you agree to the Flipkart's <a href="/login.html">Terms of Use</a> and <a href="/login.html">Privacy Policy</a></p>
+        <p class="login-consent">By continuing, you confirm that you are above 18 years of age, and you agree to zaki's <a href="/login.html">Terms of Use</a> and <a href="/login.html">Privacy Policy</a></p>
       </section>
 
       <div class="flip-login-bottom">
