@@ -108,7 +108,15 @@ const categorySidebarItems = [
   ["Beauty & Personal Care", "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=160&q=80"],
   ["Toys & Baby Care", "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=160&q=80"],
   ["Food & Healthcare", "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=160&q=80"],
-  ["Sports & Fitness", "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=160&q=80"]
+  ["Sports & Fitness", "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=160&q=80"],
+  ["Auto Accessories", "https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=160&q=80"],
+  ["Pet Store", "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=160&q=80"],
+  ["Furniture", "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=160&q=80"],
+  ["Bikes & Scooters", "https://images.unsplash.com/photo-1558981852-426c6c22a060?auto=format&fit=crop&w=160&q=80"],
+  ["Travel", "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=160&q=80"],
+  ["Books & Media", "https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=160&q=80"],
+  ["Gift Cards", "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=160&q=80"],
+  ["Sell/Exchange Old Devices", "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=160&q=80"]
 ];
 
 const categoryStoreCards = [
@@ -130,7 +138,23 @@ const categoryLaunchItems = [
 const categoryTryItems = [
   ["Claim Now", "student"],
   ["SuperCoin", "coin"],
-  ["Join BLACK", "black"]
+  ["Join BLACK", "black"],
+  ["Bills & Recharges", "bills"],
+  ["Flipkart Pay", "pay"],
+  ["Personal Loan", "loan"],
+  ["GenZ trends", "genz"],
+  ["Become a Seller", "seller"],
+  ["Brand Vouchers", "voucher"]
+];
+
+const categoryMoreItems = [
+  ["Uber", "uber"],
+  ["Pet Supplies", "pet"],
+  ["Flipkart Green", "green"],
+  ["Flipkart Samarth", "samarth"],
+  ["Flipkart Originals", "originals"],
+  ["SuperCoin Rewards", "rewards"],
+  ["Next Gen Brands", "nextgen"]
 ];
 
 const marketplaceRails = [
@@ -1022,6 +1046,18 @@ function renderCategoriesPage() {
               ${categoryTryItems.map(renderCategoryTryCard).join("")}
             </div>
           </section>
+
+          <section class="categories-section">
+            <h2>More on Flipkart</h2>
+            <div class="category-try-grid category-more-grid">
+              ${categoryMoreItems.map(renderCategoryTryCard).join("")}
+            </div>
+          </section>
+
+          <details class="category-more-about">
+            <summary>More about Allcat L0 Foryou</summary>
+            <p>Explore stores, launches, rewards, payments and services grouped for quick browsing.</p>
+          </details>
         </section>
       </div>
     </main>

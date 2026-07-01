@@ -3711,12 +3711,19 @@ body[data-page="categories"] {
   height: 38px;
   border-radius: 6px;
   background: linear-gradient(135deg, #0057ff 0 65%, #ffdd00 65% 100%);
-  content: "";
+  color: #ffdd00;
+  content: "STUDENTS";
+  font-size: 0.48rem;
+  font-weight: 1000;
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .category-try-card.coin span::before {
   background: #f6b63e;
-  content: "";
+  content: "S";
+  font-size: 1.35rem;
+  font-weight: 1000;
 }
 
 .category-try-card.black span::before {
@@ -3727,6 +3734,182 @@ body[data-page="categories"] {
   content: "BLACK";
   font-size: 1rem;
   font-weight: 1000;
+}
+
+.category-try-card.bills span::before {
+  border: 3px solid #8b9cff;
+  background: #ffffff;
+  color: #246bff;
+  content: "B";
+  font-size: 1.2rem;
+  font-weight: 1000;
+}
+
+.category-try-card.pay span::before {
+  width: 62px;
+  border-radius: 0;
+  background: transparent;
+  color: #0b7adf;
+  content: "pay";
+  font-size: 1.2rem;
+  font-style: italic;
+  font-weight: 1000;
+}
+
+.category-try-card.loan span::before {
+  width: 52px;
+  height: 52px;
+  background: #6b8dff;
+  color: #ffffff;
+  content: "Rs 10 LAKHS";
+  font-size: 0.5rem;
+  font-weight: 1000;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.category-try-card.genz span::before {
+  width: 68px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffc04a, #3cd874);
+  color: #0a4f30;
+  content: "spoyl";
+  font-size: 0.9rem;
+  font-style: italic;
+  font-weight: 1000;
+}
+
+.category-try-card.seller span::before {
+  width: 60px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #daf4ff, #ffffff);
+  color: #246bff;
+  content: "SELL";
+  font-size: 0.82rem;
+  font-weight: 1000;
+}
+
+.category-try-card.voucher span::before,
+.category-try-card.rewards span::before {
+  width: 52px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff5f6d, #ffc371);
+  color: #ffffff;
+  content: "GIFT";
+  font-size: 0.72rem;
+  font-weight: 1000;
+}
+
+.category-try-card.uber span::before {
+  width: 68px;
+  border-radius: 0;
+  background: transparent;
+  color: #111111;
+  content: "Uber";
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.category-try-card.pet span::before {
+  width: 58px;
+  height: 58px;
+  background: #8cd8c6;
+  color: #ffffff;
+  content: "PET SHOP";
+  font-size: 0.54rem;
+  font-weight: 1000;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.category-try-card.green span::before {
+  width: 64px;
+  border-radius: 0;
+  background: transparent;
+  color: #148854;
+  content: "Green";
+  font-size: 0.88rem;
+  font-weight: 1000;
+}
+
+.category-try-card.samarth span::before {
+  width: 66px;
+  border-radius: 0;
+  background: transparent;
+  color: #1874d1;
+  content: "Samarth";
+  font-size: 0.74rem;
+  font-style: italic;
+  font-weight: 1000;
+}
+
+.category-try-card.originals span::before {
+  width: 64px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f9ad38, #ffffff);
+  color: #8a4a00;
+  content: "ORIG";
+  font-size: 0.78rem;
+  font-weight: 1000;
+}
+
+.category-try-card.nextgen span::before {
+  width: 68px;
+  border-radius: 0;
+  background: transparent;
+  color: #0872cf;
+  content: "next gen";
+  font-size: 0.82rem;
+  font-style: italic;
+  font-weight: 1000;
+  line-height: 0.9;
+  text-align: center;
+}
+
+.category-more-about {
+  border-top: 1px solid #eef1f5;
+  border-bottom: 1px solid #eef1f5;
+  color: #111111;
+  background: #ffffff;
+}
+
+.category-more-about summary {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  color: #111111;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.category-more-about summary::-webkit-details-marker {
+  display: none;
+}
+
+.category-more-about summary::after {
+  color: #111111;
+  content: "+";
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.category-more-about[open] summary::after {
+  content: "-";
+}
+
+.category-more-about p {
+  margin: 0 0 14px;
+  color: #5f6b7a;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 body[data-page="categories"] .bottom-nav {
