@@ -4,8 +4,9 @@ import "./app.css";
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["cart", "orders", "cache", "user", "owner", "admin", "monitoring", "soc", "system", "webAnalytics", "speedInsights", "observability", "analytics"]);
-const monitoringPages = new Set(["monitoring", "soc", "system", "webAnalytics", "speedInsights", "observability", "analytics"]);
+const protectedPages = new Set(["cart", "orders", "cache", "user"]);
+const monitoringPages = new Set();
+const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 
 const state = {
   authReady: false,
@@ -53,6 +54,35 @@ const fallbackImages = [
   "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=80",
   "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80",
   "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=900&q=80"
+];
+
+const storefrontCategories = [
+  ["For You", "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=160&q=80"],
+  ["Fashion", "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=160&q=80"],
+  ["Mobiles", "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=160&q=80"],
+  ["Beauty", "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=160&q=80"],
+  ["Electronics", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=160&q=80"],
+  ["Home", "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=160&q=80"],
+  ["Appliances", "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=160&q=80"],
+  ["Toys", "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=160&q=80"],
+  ["Food", "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=160&q=80"],
+  ["Auto", "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=160&q=80"],
+  ["Sports", "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=160&q=80"],
+  ["Books", "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=160&q=80"],
+  ["Furniture", "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=160&q=80"]
+];
+
+const promoTiles = [
+  { title: "50 MP camera phones", subtitle: "Coming soon", badge: "AD", image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80", tone: "blue" },
+  { title: "Snapdragon launches", subtitle: "Go faster from 7 July", badge: "AD", image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80", tone: "tech" },
+  { title: "Smartwatch deals", subtitle: "New era of wearables", badge: "AD", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80", tone: "dark" }
+];
+
+const trendItems = [
+  ["Bodycon", "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=500&q=80"],
+  ["Biophilic Decor", "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=500&q=80"],
+  ["Cropped", "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=500&q=80"],
+  ["Swishy", "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=500&q=80"]
 ];
 
 const escapeMap = {
@@ -613,55 +643,58 @@ function renderMonitoringBottomNav() {
 }
 
 function renderBottomNav() {
-  if (monitoringPages.has(page)) {
-    return renderMonitoringBottomNav();
-  }
-
   return `
-    <nav class="bottom-nav module-bottom-nav" aria-label="Module navigation">
-      ${bottomNavLink("/user/index.html", "U", "User", "user")}
-      ${bottomNavLink("/owner/index.html", "P", "Owner", "owner")}
-      ${bottomNavLink("/admin/index.html", "A", "Admin", "admin")}
-      ${bottomNavLink("/development/index.html", "D", "Dev", "monitoring")}
+    <nav class="bottom-nav module-bottom-nav" aria-label="Customer navigation">
+      ${bottomNavLink("/index.html", "S", "Shop", "home")}
+      ${bottomNavLink("/user/index.html", "A", "Account", "user")}
       ${bottomNavLink("/user/cart.html", "C", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
+      ${bottomNavLink("/user/orders.html", "O", "Orders", "orders")}
+      ${bottomNavLink("/user/cache.html", "K", "Cache", "cache")}
     </nav>
   `;
 }
 
 function renderHeader() {
   return `
-    <header class="top-header">
-      <a class="brand-link" href="/index.html" aria-label="ScaleMart home">
-        <span class="brand-mark">S</span>
-        <span class="brand-text">ScaleMart</span>
-      </a>
-      <div class="search-wrap">
-        <input data-filter="query" data-focus-key="search" type="search" value="${escapeHtml(state.filters.query)}" placeholder="Search for products, brands and more">
+    <header class="top-header customer-header">
+      <div class="brand-tabs" aria-label="ScaleMart services">
+        <a class="brand-tab primary" href="/index.html" aria-label="ScaleMart home">
+          <span class="flip-mark">S</span>
+          <span>ScaleMart</span>
+        </a>
+        <a class="brand-tab travel" href="/index.html#featured-products">
+          <span class="travel-mark">Air</span>
+          <span>Travel</span>
+        </a>
       </div>
-      <nav class="main-nav" aria-label="Store navigation">
-        ${navLink("/index.html", "Home", "home")}
-        ${navLink("/user/index.html", "User", "user")}
-        ${navLink("/owner/index.html", "Owner", "owner")}
-        ${navLink("/admin/index.html", "Admin", "admin")}
-        ${navLink("/development/index.html", "Dev", "monitoring")}
-        ${navLink("/user/cart.html", `Cart (${cartCount()})`, "cart")}
-        ${navLink("/user/orders.html", "Orders", "orders")}
-        ${navLink("/admin/cache.html", "Cache", "cache")}
+      <div class="delivery-location">
+        <span class="pin-dot" aria-hidden="true"></span>
+        <span>Location not set</span>
+        <a href="/login.html">Select delivery location</a>
+      </div>
+      <div class="search-wrap market-search">
+        <span class="search-icon" aria-hidden="true"></span>
+        <input data-filter="query" data-focus-key="search" type="search" value="${escapeHtml(state.filters.query)}" placeholder="Search for Products, Brands and More">
+      </div>
+      <nav class="header-actions" aria-label="Customer actions">
+        ${isSignedIn() ? `<span class="signed-user" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button>` : `<a class="header-action login-action" href="/login.html"><span class="person-icon" aria-hidden="true"></span><span>Login</span><span class="chevron">v</span></a>`}
+        <button class="header-action" type="button"><span>More</span><span class="chevron">v</span></button>
+        <a class="header-action cart-action" href="/user/cart.html"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
       </nav>
-      ${isSignedIn() ? `<div class="account-actions"><span class="user-email" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button></div>` : `<a class="user-button" href="/login.html">Login</a>`}
     </header>
   `;
 }
 
 function renderCategoryStrip() {
   return `
-    <div class="category-strip" aria-label="Product departments">
-      ${categories().map((category) => `
-        <button class="category-chip ${state.filters.category === category ? "active" : ""}" type="button" data-action="category" data-category="${escapeHtml(category)}">
-          ${category === "all" ? "All" : escapeHtml(category)}
-        </button>
+    <nav class="category-strip market-categories" aria-label="Product departments">
+      ${storefrontCategories.map(([label, image], index) => `
+        <a class="market-category ${index === 0 ? "active" : ""}" href="#featured-products">
+          <span class="market-category-icon"><img src="${escapeHtml(image)}" alt="" loading="lazy"></span>
+          <span>${escapeHtml(label)}</span>
+        </a>
       `).join("")}
-    </div>
+    </nav>
   `;
 }
 
@@ -693,12 +726,31 @@ function renderProductCard(product) {
   `;
 }
 
+function renderMarketProductCard(product) {
+  const inCart = state.cart.find((item) => item.productId === product.id);
+  return `
+    <article class="market-product-card">
+      <a class="market-product-media" href="/user/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
+      </a>
+      <div class="market-product-copy">
+        <strong>${escapeHtml(product.name)}</strong>
+        <span>${escapeHtml(product.category)} | ${escapeHtml(product.rating)} star</span>
+        <b>${formatMoney(product.pricePaise)}</b>
+      </div>
+      <div class="market-product-actions">
+        <button class="btn add" type="button" data-action="add-to-cart" data-product-id="${escapeHtml(product.id)}" ${state.loading.action === product.id ? "disabled" : ""}>${inCart ? `Add more (${inCart.quantity})` : "Add to cart"}</button>
+        <button class="btn buy" type="button" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">Buy now</button>
+      </div>
+    </article>
+  `;
+}
 function renderFaqItems() {
   const faqs = [
-    ["Can I browse without login?", "Yes. The home page and login page are public. Cart, orders, admin, owner and monitoring pages require a Supabase session."],
+    ["Can I browse without login?", "Yes. The home page and login page are public. Cart, order history and customer cache require a Supabase session."],
     ["Where is cart data stored?", "Cart and order data are stored per signed-in user through the backend and Upstash Redis cache."],
-    ["Who can use the monitoring pages?", "The monitoring pages are session-protected and ready for role claims. Add Supabase role enforcement when you want strict privilege control."],
-    ["Can shop owners manage products?", "The owner module shows catalog, inventory, stock health and product cache controls for shop owner workflows."]
+    ["Can I see my orders on another device?", "Yes. Sign in with the same Supabase account and the backend will load your user-scoped cart and orders from cache."],
+    ["Can I clear my customer cache?", "Yes. Open the customer cache page after login to warm or clear the cart and order cache for your account."]
   ];
   return faqs.map(([question, answer]) => `
     <details class="faq-item">
@@ -713,39 +765,36 @@ function renderHomePage() {
   return `
     ${renderHeader()}
     ${renderCategoryStrip()}
-    <main class="home-layout public-home">
-      <section class="store-banner public-hero">
-        <div>
-          <p class="eyebrow">ScaleMart Commerce</p>
-          <h1>Fast ecommerce with role-based dashboards.</h1>
-          <p>Browse products publicly, then sign in to access cart, orders, shop owner tools, admin operations and development monitoring.</p>
-          <div class="public-actions">
-            <a class="btn primary" href="/login.html">Login to continue</a>
-            <a class="btn ghost" href="#featured-products">View products</a>
-          </div>
+    <main class="home-layout market-home">
+      <section class="promo-grid" aria-label="Featured offers">
+        ${promoTiles.map((tile) => `
+          <article class="promo-card ${escapeHtml(tile.tone)}">
+            <img src="${escapeHtml(tile.image)}" alt="${escapeHtml(tile.title)}" loading="lazy">
+            <div>
+              <span>${escapeHtml(tile.badge)}</span>
+              <h2>${escapeHtml(tile.title)}</h2>
+              <p>${escapeHtml(tile.subtitle)}</p>
+            </div>
+          </article>
+        `).join("")}
+      </section>
+
+      <section class="trend-band" aria-labelledby="trendTitle">
+        <h2 id="trendTitle">Trends you may like</h2>
+        <div class="trend-strip">
+          ${trendItems.map(([label, image]) => `
+            <article class="trend-card">
+              <img src="${escapeHtml(image)}" alt="${escapeHtml(label)}" loading="lazy">
+              <strong>${escapeHtml(label)}</strong>
+            </article>
+          `).join("")}
         </div>
       </section>
 
-      <section class="seo-section" aria-labelledby="seoTitle">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Online shopping platform</p>
-            <h2 id="seoTitle">Role-ready ecommerce for customers, owners, admins and developers</h2>
-            <p>ScaleMart combines a customer storefront with Supabase login, user-scoped cart cache, order history, shop owner inventory, admin cache operations and development monitoring pages.</p>
-          </div>
-        </div>
-        <div class="seo-grid">
-          <article><strong>User module</strong><span>Browse products, manage cart, place orders and review order history.</span></article>
-          <article><strong>Shop owner module</strong><span>Review catalog, stock levels, product cache and owner inventory views.</span></article>
-          <article><strong>Admin module</strong><span>Operate orders, cache controls and platform status from protected pages.</span></article>
-          <article><strong>Development module</strong><span>Monitor SOC, system health, analytics, speed insights and observability.</span></article>
-        </div>
-      </section>
-
-      <section id="featured-products" class="store-toolbar">
+      <section id="featured-products" class="market-toolbar">
         <div>
-          <h2>Featured products</h2>
-          <p>${escapeHtml(productCacheLabel())} - public catalog preview</p>
+          <h2>Top picks for you</h2>
+          <p>${escapeHtml(productCacheLabel())} - ${products.length} products showing</p>
         </div>
         <div class="toolbar-controls">
           <select data-filter="sort" aria-label="Sort products">
@@ -761,34 +810,29 @@ function renderHomePage() {
 
       ${renderMessage()}
 
-      <section class="product-grid" aria-label="Featured products">
-        ${products.length ? products.map(renderProductCard).join("") : `<div class="empty-state">No products found.</div>`}
+      <section class="market-product-grid" aria-label="Shopping products">
+        ${products.length ? products.map(renderMarketProductCard).join("") : `<div class="empty-state">No products found.</div>`}
       </section>
 
-      <section class="seo-section" aria-labelledby="faqTitle">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">FAQ</p>
-            <h2 id="faqTitle">Frequently asked questions</h2>
-          </div>
+      <section class="market-faq" aria-labelledby="faqTitle">
+        <div>
+          <h2 id="faqTitle">ScaleMart - Your go-to place for online shopping</h2>
         </div>
         <div class="faq-list">
           ${renderFaqItems()}
         </div>
       </section>
     </main>
-    <footer class="site-footer">
-      <div>
-        <strong>ScaleMart</strong>
-        <p>Public ecommerce homepage with protected role dashboards.</p>
+    <footer class="market-footer">
+      <div class="footer-columns">
+        <section><h3>About</h3><a>Contact Us</a><a>About Us</a><a>Careers</a><a>ScaleMart Stories</a></section>
+        <section><h3>Group Companies</h3><a>Myntra</a><a>Cleartrip</a><a>Shopsy</a></section>
+        <section><h3>Help</h3><a>Payments</a><a>Shipping</a><a>Cancellation & Returns</a><a>FAQ</a></section>
+        <section><h3>Consumer Policy</h3><a>Terms Of Use</a><a>Security</a><a>Privacy</a><a>Grievance Redressal</a></section>
+        <section><h3>Mail Us</h3><p>ScaleMart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
+        <section><h3>Registered Office Address</h3><p>ScaleMart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
       </div>
-      <nav aria-label="Footer links">
-        <a href="/login.html">Login</a>
-        <a href="/user/index.html">User</a>
-        <a href="/owner/index.html">Owner</a>
-        <a href="/admin/index.html">Admin</a>
-        <a href="/development/index.html">Monitoring</a>
-      </nav>
+      <div class="footer-bottom"><span>Become a Seller</span><span>Advertise</span><span>Gift Cards</span><span>Help Center</span><strong>2007-2026 ScaleMart.com</strong></div>
     </footer>
     ${isSignedIn() ? renderBottomNav() : ""}
   `;
@@ -1002,10 +1046,10 @@ function renderUserModulePage() {
       ${renderModuleCard("Shopping profile", "Manage the customer journey from browsing products to cart and order history.", `<a class="btn primary" href="/index.html">Shop products</a>`)}
       ${renderModuleCard("Current cart", `${cartCount()} items are saved in this user's Upstash cart cache.`, `<a class="btn ghost" href="/user/cart.html">Open cart</a>`)}
       ${renderModuleCard("Latest order", latestOrder ? `${escapeHtml(latestOrder.id)} is currently ${escapeHtml(latestOrder.status)}.` : "No orders created yet.", `<a class="btn ghost" href="/user/orders.html">View orders</a>`)}
-      ${renderModuleCard("User cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/admin/cache.html">View cache</a>`)}
+      ${renderModuleCard("Customer cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/user/cache.html">View cache</a>`)}
     </section>
   `;
-  return renderModuleShell("user", "User module", "Customer home for account, cart, checkout and order history.", metrics, content);
+  return renderModuleShell("user", "Customer module", "Customer home for account, cart, checkout and order history.", metrics, content);
 }
 
 function renderOwnerModulePage() {
@@ -1281,13 +1325,13 @@ function render() {
   } else if (page === "user") {
     app.innerHTML = renderUserModulePage();
   } else if (page === "owner") {
-    app.innerHTML = renderOwnerModulePage();
+    window.location.href = "/user/index.html";
   } else if (page === "admin") {
-    app.innerHTML = renderAdminModulePage();
+    window.location.href = "/user/index.html";
   } else if (page === "monitoring") {
-    app.innerHTML = renderMonitoringModulePage();
+    window.location.href = "/user/index.html";
   } else if (monitoringPages.has(page)) {
-    app.innerHTML = renderMonitoringPrivilegePage();
+    window.location.href = "/user/index.html";
   } else {
     app.innerHTML = renderHomePage();
   }
@@ -1395,6 +1439,12 @@ async function bootstrap() {
   const { data } = await supabase.auth.getSession();
   state.session = data.session;
   state.authReady = true;
+
+  if (retiredModulePathPattern.test(window.location.pathname)) {
+    const target = window.location.pathname.includes("/admin/cache") ? "/user/cache.html" : "/user/index.html";
+    window.location.href = state.session ? target : `/login.html?next=${encodeURIComponent(target)}`;
+    return;
+  }
 
   if (page === "login" && state.session) {
     const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/index.html";
