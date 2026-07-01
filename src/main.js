@@ -25,6 +25,7 @@ const state = {
   cache: null,
   health: null,
   productCache: null,
+  paymentAddressEdit: new URLSearchParams(window.location.search).get("step") === "address",
   message: "",
   messageType: "info",
   filters: {
@@ -1046,16 +1047,19 @@ async function startRazorpayPayment(address) {
   window.location.href = "/user/orders/";
 }
 
-async function submitPaymentAddress(form) {
+async function continuePayment() {
   clearMessage();
   if (!state.cart.length) {
     setMessage("Add an item before continuing to payment.", "error");
     return;
   }
 
-  const formData = new FormData(form);
-  const address = Object.fromEntries(formData.entries());
-  savePaymentAddress(address);
+  const address = savedPaymentAddress();
+  if (!isPaymentAddressComplete(address)) {
+    state.paymentAddressEdit = true;
+    setMessage("Add a delivery address before payment.", "error");
+    return;
+  }
 
   state.loading.action = "payment";
   render();
@@ -1070,6 +1074,26 @@ async function submitPaymentAddress(form) {
     state.loading.action = "";
     setMessage(error.message, "error");
   }
+}
+
+async function submitPaymentAddress(form) {
+  clearMessage();
+  if (!state.cart.length) {
+    setMessage("Add an item before continuing to payment.", "error");
+    return;
+  }
+
+  const formData = new FormData(form);
+  const address = Object.fromEntries(formData.entries());
+  savePaymentAddress(address);
+
+  if (state.paymentAddressEdit) {
+    window.location.href = "/cart/";
+    return;
+  }
+
+  state.paymentAddressEdit = false;
+  await continuePayment();
 }
 
 async function signOut() {
@@ -1747,23 +1771,75 @@ function renderFilledCartItem(item) {
       <div class="filled-cart-actions">
         <button type="button">Save for later</button>
         <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(-quantity)}">Remove</button>
-        <button type="button" data-action="go-payment">Buy this now</button>
+        <button type="button" data-action="continue-payment">Buy this now</button>
       </div>
     </article>
+  `;
+}
+
+function isPaymentAddressComplete(address) {
+  return Boolean(address?.fullName && address?.phone && address?.address && address?.pincode && address?.city && address?.state);
+}
+
+function renderOrderSummaryProgress(address) {
+  const hasAddress = isPaymentAddressComplete(address);
+  return `
+    <section class="checkout-progress" aria-label="Checkout progress">
+      <div class="checkout-step ${hasAddress ? "complete" : ""}">
+        <span>${hasAddress ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>` : "1"}</span>
+        <strong>Address</strong>
+      </div>
+      <div class="checkout-line active"></div>
+      <div class="checkout-step active">
+        <span>2</span>
+        <strong>Order Summary</strong>
+      </div>
+      <div class="checkout-line"></div>
+      <div class="checkout-step">
+        <span>3</span>
+        <strong>Payment</strong>
+      </div>
+    </section>
+  `;
+}
+
+function renderCartDeliveryAddress(address) {
+  if (!isPaymentAddressComplete(address)) {
+    return `
+      <section class="order-address-card">
+        <div>
+          <span>Deliver to:</span>
+          <strong>Add delivery address</strong>
+          <p>Enter your address before continuing to payment.</p>
+        </div>
+        <a href="/payment/?step=address">Add</a>
+      </section>
+    `;
+  }
+
+  const addressLine = [address.address, address.city, address.state, address.pincode].filter(Boolean).join(", ");
+  return `
+    <section class="order-address-card">
+      <div>
+        <span>Deliver to:</span>
+        <strong>${escapeHtml(address.fullName || currentUserName())} <em>HOME</em></strong>
+        <p>${escapeHtml(addressLine)}</p>
+        <p>${escapeHtml(address.phone || "")}</p>
+      </div>
+      <a href="/payment/?step=address">Change</a>
+    </section>
   `;
 }
 
 function renderFilledCartPage() {
   const summary = cartPriceSummary();
   const address = savedPaymentAddress();
-  const addressSummary = [address.city, address.state, address.pincode].filter(Boolean).join(", ");
   return `
-    <main class="clone-page public-cart-page filled-cart-page">
-      ${renderCloneBackBar("My Cart")}
-      <section class="cart-address-strip">
-        <span>${addressSummary ? `Deliver to ${escapeHtml(addressSummary)}` : "From Saved Addresses"}</span>
-        <button type="button" data-action="go-payment">${address.pincode ? "Change Address" : "Enter Delivery Pincode"}</button>
-      </section>
+    <main class="clone-page public-cart-page filled-cart-page order-summary-page">
+      ${renderCloneBackBar("Order Summary")}
+      ${renderOrderSummaryProgress(address)}
+      ${renderMessage()}
+      ${renderCartDeliveryAddress(address)}
 
       <section class="filled-cart-list" aria-label="Cart items">
         ${state.cart.map(renderFilledCartItem).join("")}
@@ -1783,19 +1859,14 @@ function renderFilledCartPage() {
         <p class="cart-save-note">You'll save ${formatMoney(summary.savedPaise)} on this order!</p>
       </section>
 
-      <div class="cart-secure-note">
-        <span aria-hidden="true"></span>
-        <p>Safe and secure payments. Easy returns.</p>
-      </div>
       <div class="cart-order-bar">
         <div>
           <s>${formatMoney(summary.pricePaise)}</s>
           <strong>${formatMoney(summary.totalPaise)}</strong>
         </div>
-        <button type="button" data-action="go-payment">Place Order</button>
+        <button type="button" data-action="continue-payment" ${state.loading.action === "payment" ? "disabled" : ""}>Continue</button>
       </div>
     </main>
-    ${renderBottomNav()}
   `;
 }
 
@@ -1867,6 +1938,7 @@ function renderPaymentSummaryItem(item) {
 function renderPaymentPage() {
   const summary = cartPriceSummary();
   const address = savedPaymentAddress();
+  const paymentActionLabel = state.paymentAddressEdit ? "Save Address" : "Continue to Razorpay";
 
   if (!state.cart.length) {
     return `
@@ -1943,7 +2015,7 @@ function renderPaymentPage() {
             <small>Total</small>
             <strong>${formatMoney(summary.totalPaise)}</strong>
           </div>
-          <button type="submit" ${state.loading.action === "payment" ? "disabled" : ""}>Continue to Razorpay</button>
+          <button type="submit" ${state.loading.action === "payment" ? "disabled" : ""}>${paymentActionLabel}</button>
         </div>
       </form>
     </main>
@@ -2922,6 +2994,9 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "go-payment") {
     goToPayment();
+  }
+  if (action === "continue-payment") {
+    await continuePayment();
   }
   if (action === "order-status") {
     await updateOrderStatus(button.dataset.orderId, button.dataset.status);
