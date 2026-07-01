@@ -655,7 +655,16 @@ async function loadPageData() {
     return;
   }
 
-  if (page === "account" || page === "publicCart") {
+  if (page === "account") {
+    return;
+  }
+
+  if (page === "publicCart") {
+    if (isSignedIn()) {
+      await Promise.all([loadProducts(), loadCart(), loadCache()]);
+      return;
+    }
+    await loadProducts();
     return;
   }
 
@@ -692,7 +701,7 @@ async function saveCart(nextCart) {
 async function addToCart(productId, goToCart = false) {
   clearMessage();
   if (!isSignedIn()) {
-    const nextUrl = goToCart ? "/user/cart/" : "/";
+    const nextUrl = goToCart ? "/cart/" : "/";
     window.location.href = `/login/?next=${encodeURIComponent(nextUrl)}`;
     return;
   }
@@ -726,7 +735,7 @@ async function addToCart(productId, goToCart = false) {
     render();
     await saveCart(nextCart);
     if (goToCart) {
-      window.location.href = "/user/cart/";
+      window.location.href = "/cart/";
       return;
     }
     setMessage(`${product.name} added to cart.`);
@@ -1335,7 +1344,136 @@ function renderCartEmptyGraphic() {
   `;
 }
 
+function cartProductForItem(item) {
+  return productById(item.productId) || {
+    id: item.productId,
+    name: item.name,
+    pricePaise: item.pricePaise,
+    image: fallbackImages[0],
+    alt: `${item.name} product image`,
+    category: "Product",
+    badge: "Early Bird Deal",
+    rating: "4.0",
+    delivery: "Wed Jul 8",
+    channel: "zaki Assured"
+  };
+}
+
+function cartItemListPricePaise(item) {
+  const product = cartProductForItem(item);
+  return productListPricePaise(product) * Number(item.quantity || 1);
+}
+
+function cartPriceSummary() {
+  const pricePaise = state.cart.reduce((sum, item) => sum + cartItemListPricePaise(item), 0);
+  const sellingPaise = cartTotalPaise();
+  const discountPaise = Math.max(pricePaise - sellingPaise, 0);
+  const couponPaise = state.cart.length ? Math.min(1200, Math.max(0, Math.round(sellingPaise * 0.08))) : 0;
+  const platformFeePaise = state.cart.length ? 900 : 0;
+  const totalPaise = Math.max(0, sellingPaise - couponPaise + platformFeePaise);
+  const savedPaise = Math.max(0, pricePaise - totalPaise);
+  return { pricePaise, sellingPaise, discountPaise, couponPaise, platformFeePaise, totalPaise, savedPaise };
+}
+
+function renderFilledCartItem(item) {
+  const product = cartProductForItem(item);
+  const quantity = Number(item.quantity || 1);
+  const unitListPrice = Math.max(productListPricePaise(product), Number(item.pricePaise || product.pricePaise || 0));
+  const unitPrice = Number(item.pricePaise || product.pricePaise || 0);
+  const discount = unitListPrice ? Math.max(0, Math.round(((unitListPrice - unitPrice) / unitListPrice) * 100)) : productDiscountPercent(product);
+  return `
+    <article class="filled-cart-item">
+      <div class="filled-cart-badge">${escapeHtml(product.badge || "Early Bird Deal")}</div>
+      <div class="filled-cart-product">
+        <a class="filled-cart-media" href="${escapeHtml(productDetailHref(product))}" aria-label="View ${escapeHtml(product.name)}">
+          <img src="${escapeHtml(product.image || fallbackImages[0])}" alt="${escapeHtml(product.alt || product.name)}" loading="lazy">
+        </a>
+        <div class="filled-cart-copy">
+          <a href="${escapeHtml(productDetailHref(product))}">${escapeHtml(product.name)}</a>
+          <span>${escapeHtml(product.category || "Generic")}, ${escapeHtml(product.channel || "Assured")}</span>
+          <div class="filled-cart-rating">
+            <b>${escapeHtml(product.rating || "4.0")}</b>
+            <small>(648)</small>
+            <em>Assured</em>
+          </div>
+          <div class="filled-cart-price">
+            <strong>${discount}%</strong>
+            <s>${formatMoney(unitListPrice)}</s>
+            <b>${formatMoney(unitPrice)}</b>
+          </div>
+        </div>
+      </div>
+      <div class="filled-cart-meta">
+        <div class="filled-cart-qty" aria-label="Quantity for ${escapeHtml(item.name)}">
+          <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="-1" aria-label="Decrease quantity">-</button>
+          <span>Qty: ${escapeHtml(quantity)}</span>
+          <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="1" aria-label="Increase quantity">+</button>
+        </div>
+        <p>Delivery by ${escapeHtml(product.delivery || "Wed Jul 8")}</p>
+      </div>
+      <div class="filled-cart-minimum">
+        <span>Minimum Order Quantity: ${Math.max(3, quantity)}</span>
+        <a href="${escapeHtml(productDetailHref(product))}">Know more</a>
+      </div>
+      <div class="filled-cart-actions">
+        <button type="button">Save for later</button>
+        <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(-quantity)}">Remove</button>
+        <button type="button" data-action="submit-order" data-status="success">Buy this now</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderFilledCartPage() {
+  const summary = cartPriceSummary();
+  return `
+    <main class="clone-page public-cart-page filled-cart-page">
+      ${renderCloneBackBar("My Cart")}
+      <section class="cart-address-strip">
+        <span>From Saved Addresses</span>
+        <button type="button">Enter Delivery Pincode</button>
+      </section>
+
+      <section class="filled-cart-list" aria-label="Cart items">
+        ${state.cart.map(renderFilledCartItem).join("")}
+      </section>
+
+      <section class="cart-price-card" aria-labelledby="priceDetailsTitle">
+        <h2 id="priceDetailsTitle">Price Details</h2>
+        <div class="cart-price-lines">
+          <div><span>Price (${cartCount()} item${cartCount() === 1 ? "" : "s"})</span><strong>${formatMoney(summary.pricePaise)}</strong></div>
+          <div><span>Discount</span><strong class="saving">- ${formatMoney(summary.discountPaise)}</strong></div>
+          <div><span>Coupons for you</span><strong class="saving">- ${formatMoney(summary.couponPaise)}</strong></div>
+          <div><span>Platform Fee</span><strong>${formatMoney(summary.platformFeePaise)}</strong></div>
+        </div>
+        <div class="cart-price-total">
+          <span>Total Amount</span>
+          <strong>${formatMoney(summary.totalPaise)}</strong>
+        </div>
+        <p class="cart-save-note">You'll save ${formatMoney(summary.savedPaise)} on this order!</p>
+      </section>
+
+      <div class="cart-secure-note">
+        <span aria-hidden="true"></span>
+        <p>Safe and secure payments. Easy returns.</p>
+      </div>
+      <div class="cart-order-bar">
+        <div>
+          <s>${formatMoney(summary.pricePaise)}</s>
+          <strong>${formatMoney(summary.totalPaise)}</strong>
+        </div>
+        <button type="button" data-action="submit-order" data-status="success" ${state.loading.action === "success" ? "disabled" : ""}>Place Order</button>
+      </div>
+    </main>
+    ${renderBottomNav()}
+  `;
+}
+
 function renderPublicCartPage() {
+  if (state.cart.length) {
+    return renderFilledCartPage();
+  }
+
   return `
     <main class="clone-page public-cart-page">
       ${renderCloneBackBar("My Cart")}
@@ -1343,7 +1481,7 @@ function renderPublicCartPage() {
       <section class="cart-empty-panel">
         ${renderCartEmptyGraphic()}
         <h2>Missing Cart items?</h2>
-        <a class="cart-login-button" href="/login/?next=${encodeURIComponent("/cart/")}">Login</a>
+        ${isSignedIn() ? "" : `<a class="cart-login-button" href="/login/?next=${encodeURIComponent("/cart/")}">Login</a>`}
         <a class="cart-continue-link" href="/">Continue Shopping</a>
       </section>
 
@@ -1695,37 +1833,7 @@ function renderCartItem(item) {
 }
 
 function renderCartPage() {
-  const total = cartTotalPaise();
-  return `
-    ${renderHeader()}
-    <main class="page-layout two-column">
-      <section class="page-section">
-        <div class="section-title">
-          <div>
-            <p class="eyebrow">Shopping cart</p>
-            <h1>My cart</h1>
-          </div>
-          <a class="text-link" href="/">Continue shopping</a>
-        </div>
-        ${renderMessage()}
-        <div class="cart-list">
-          ${state.cart.length ? state.cart.map(renderCartItem).join("") : `<div class="empty-state">Your cart is empty.</div>`}
-        </div>
-      </section>
-
-      <aside class="summary-panel">
-        <h2>Price details</h2>
-        <div class="summary-row"><span>Items</span><strong>${cartCount()}</strong></div>
-        <div class="summary-row"><span>Total</span><strong>${formatMoney(total)}</strong></div>
-        <div class="summary-row"><span>Delivery</span><strong>Free</strong></div>
-        <div class="summary-total"><span>Amount payable</span><strong>${formatMoney(total)}</strong></div>
-        <button class="btn primary wide" type="button" data-action="submit-order" data-status="success" ${!state.cart.length ? "disabled" : ""}>Place order</button>
-        <button class="btn warning wide" type="button" data-action="submit-order" data-status="failed" ${!state.cart.length ? "disabled" : ""}>Save failed order</button>
-        <button class="btn danger wide" type="button" data-action="clear-cart" ${!state.cart.length ? "disabled" : ""}>Clear cart</button>
-      </aside>
-    </main>
-    ${renderBottomNav()}
-  `;
+  return renderPublicCartPage();
 }
 
 function renderOrder(order) {
