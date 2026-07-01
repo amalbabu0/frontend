@@ -11,6 +11,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         home: htmlEntry("./index.html"),
+        categories: htmlEntry("./categories.html"),
         login: htmlEntry("./login.html"),
         userHome: htmlEntry("./user/index.html"),
         userCart: htmlEntry("./user/cart.html"),

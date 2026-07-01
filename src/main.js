@@ -97,6 +97,42 @@ const spotlightItems = [
   ["Linen co-ords", "Min. 40% Off", "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=520&q=80"]
 ];
 
+const categorySidebarItems = [
+  ["For You", "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=160&q=80"],
+  ["Fashion", "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=160&q=80"],
+  ["Mobiles", "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=160&q=80"],
+  ["Appliances", "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=160&q=80"],
+  ["Electronics", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=160&q=80"],
+  ["Smart Gadgets", "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=160&q=80"],
+  ["Home", "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=160&q=80"],
+  ["Beauty & Personal Care", "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=160&q=80"],
+  ["Toys & Baby Care", "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=160&q=80"],
+  ["Food & Healthcare", "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=160&q=80"],
+  ["Sports & Fitness", "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=160&q=80"]
+];
+
+const categoryStoreCards = [
+  ["GOAT SALE", "Starts 4th July", "sale"],
+  ["EARLY BIRD DEALS", "Live now", "early"]
+];
+
+const categoryLaunchItems = [
+  ["Kaynano 32", "SHOP NOW", "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=320&q=80"],
+  ["Nova 2 Pro 5G", "BUY NOW", "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=320&q=80"],
+  ["Nova 2 Neo 5G", "BUY NOW", "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=320&q=80"],
+  ["Phone (4b)", "NOTIFY ME", "https://images.unsplash.com/photo-1616410011236-7a42121dd981?auto=format&fit=crop&w=320&q=80"],
+  ["ONMC+ Smart console", "BUY NOW", "https://images.unsplash.com/photo-1603481546238-487240415921?auto=format&fit=crop&w=320&q=80"],
+  ["Moto Pad 70 Pro", "NOTIFY ME", "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=320&q=80"],
+  ["OnePlus Nord Buds 4", "BUY NOW", "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=320&q=80"],
+  ["VIZ TV", "BUY NOW", "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=320&q=80"]
+];
+
+const categoryTryItems = [
+  ["Claim Now", "student"],
+  ["SuperCoin", "coin"],
+  ["Join BLACK", "black"]
+];
+
 const marketplaceRails = [
   {
     title: "Trending Gadgets & Appliances",
@@ -417,6 +453,15 @@ async function loadPageData() {
     return;
   }
 
+  if (page === "categories") {
+    if (isSignedIn()) {
+      await Promise.all([loadProducts(), loadCart(), loadCache()]);
+      return;
+    }
+    await loadProducts();
+    return;
+  }
+
   if (!isSignedIn()) {
     return;
   }
@@ -718,7 +763,7 @@ function renderBottomNav() {
   return `
     <nav class="bottom-nav module-bottom-nav" aria-label="Customer navigation">
       ${bottomNavLink("/index.html", "home", "Home", "home")}
-      ${bottomNavLink("/index.html#featured-products", "categories", "Categories", "categories")}
+      ${bottomNavLink("/categories.html", "categories", "Categories", "categories")}
       ${bottomNavLink(accountHref, "account", "Account", ["user", "orders", "cache"])}
       ${bottomNavLink("/user/cart.html", "cart", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
     </nav>
@@ -883,6 +928,105 @@ function renderFaqItems() {
       <p>${escapeHtml(answer)}</p>
     </details>
   `).join("");
+}
+
+function renderCategoryTopBar() {
+  return `
+    <header class="categories-topbar">
+      <a class="categories-icon-button" href="/index.html" aria-label="Back to home">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/><path d="M9 12h11"/></svg>
+      </a>
+      <h1>All Categories</h1>
+      <div class="categories-top-actions">
+        <button class="categories-icon-button" type="button" aria-label="Search categories">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+        </button>
+        <a class="categories-icon-button" href="/user/cart.html" aria-label="Open cart">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 5h2l1.6 10.3h10.7L20 8H7.1"/><circle cx="9" cy="20" r="1.4"/><circle cx="17.4" cy="20" r="1.4"/></svg>
+          ${cartCount() ? `<strong>${cartCount()}</strong>` : ""}
+        </a>
+      </div>
+    </header>
+  `;
+}
+
+function renderCategorySidebarItem([label, image], index) {
+  return `
+    <a class="categories-side-item ${index === 0 ? "active" : ""}" href="#categoryContent">
+      <span><img src="${escapeHtml(image)}" alt="" loading="lazy"></span>
+      <strong>${escapeHtml(label)}</strong>
+    </a>
+  `;
+}
+
+function renderCategoryStoreCard([title, label, tone]) {
+  return `
+    <article class="category-store-card ${escapeHtml(tone)}">
+      <div>${escapeHtml(title)}</div>
+      <span>${escapeHtml(label)}</span>
+    </article>
+  `;
+}
+
+function renderCategoryLaunchCard([title, label, image]) {
+  return `
+    <article class="category-launch-card">
+      <div class="category-launch-media">
+        <img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy">
+        <span>${escapeHtml(label)}</span>
+      </div>
+      <strong>${escapeHtml(title)}</strong>
+    </article>
+  `;
+}
+
+function renderCategoryTryCard([title, tone]) {
+  return `
+    <article class="category-try-card ${escapeHtml(tone)}">
+      <span aria-hidden="true"></span>
+      <strong>${escapeHtml(title)}</strong>
+    </article>
+  `;
+}
+
+function renderCategoriesPage() {
+  return `
+    <main class="categories-page">
+      ${renderCategoryTopBar()}
+      <div class="categories-layout">
+        <aside class="categories-sidebar" aria-label="All categories">
+          ${categorySidebarItems.map(renderCategorySidebarItem).join("")}
+        </aside>
+        <section id="categoryContent" class="categories-content" aria-label="Category collections">
+          <section class="categories-section">
+            <h2>Popular Store</h2>
+            <div class="category-store-grid">
+              ${categoryStoreCards.map(renderCategoryStoreCard).join("")}
+            </div>
+          </section>
+
+          <section class="categories-section">
+            <h2>New & Upcoming Launches</h2>
+            <div class="category-launch-grid">
+              ${categoryLaunchItems.map(renderCategoryLaunchCard).join("")}
+              <a class="category-view-all" href="/index.html#featured-products" aria-label="View all launches">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15"/><path d="m5 12 7 7 7-7"/></svg>
+                <strong>View All</strong>
+              </a>
+            </div>
+          </section>
+
+          <section class="categories-section">
+            <h2>Have you tried?</h2>
+            <div class="category-try-grid">
+              ${categoryTryItems.map(renderCategoryTryCard).join("")}
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+    ${renderBottomNav()}
+  `;
 }
 
 function renderHomePage() {
@@ -1467,6 +1611,8 @@ function render() {
     app.innerHTML = renderCachePage();
   } else if (page === "user") {
     app.innerHTML = renderUserModulePage();
+  } else if (page === "categories") {
+    app.innerHTML = renderCategoriesPage();
   } else if (page === "owner") {
     window.location.href = "/user/index.html";
   } else if (page === "admin") {
@@ -1569,7 +1715,7 @@ async function bootstrap() {
 
   if (!hasSupabaseConfig || !supabase) {
     state.authReady = true;
-    if (page === "home") {
+    if (page === "home" || page === "categories") {
       await loadProducts();
     } else {
       state.message = "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env.";
