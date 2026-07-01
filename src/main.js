@@ -5,6 +5,7 @@ const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
 const protectedPages = new Set(["cart", "orders", "cache", "user"]);
+const publicPages = new Set(["home", "categories", "account", "publicCart"]);
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 
@@ -156,6 +157,23 @@ const categoryMoreItems = [
   ["SuperCoin Rewards", "rewards"],
   ["Next Gen Brands", "nextgen"]
 ];
+
+const accountSettingsRows = [
+  ["language", "Select Language", ""],
+  ["bell", "Notification Settings", ""],
+  ["help", "Help Center", ""]
+];
+
+const accountInfoRows = [
+  ["document", "Terms, Policies and Licenses", ""],
+  ["question", "Browse FAQs", ""]
+];
+
+const cartSuggestionProduct = {
+  title: "Samsung Galaxy S26 5...",
+  price: "Rs7999",
+  image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=360&q=80"
+};
 
 const marketplaceRails = [
   {
@@ -486,6 +504,10 @@ async function loadPageData() {
     return;
   }
 
+  if (page === "account" || page === "publicCart") {
+    return;
+  }
+
   if (!isSignedIn()) {
     return;
   }
@@ -783,13 +805,12 @@ function renderMonitoringBottomNav() {
 }
 
 function renderBottomNav() {
-  const accountHref = isSignedIn() ? "/user/index.html" : `/login.html?next=${encodeURIComponent("/user/index.html")}`;
   return `
     <nav class="bottom-nav module-bottom-nav" aria-label="Customer navigation">
       ${bottomNavLink("/index.html", "home", "Home", "home")}
       ${bottomNavLink("/categories.html", "categories", "Categories", "categories")}
-      ${bottomNavLink(accountHref, "account", "Account", ["user", "orders", "cache"])}
-      ${bottomNavLink("/user/cart.html", "cart", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
+      ${bottomNavLink("/account.html", "account", "Account", ["account", "user", "orders", "cache"])}
+      ${bottomNavLink("/cart.html", "cart", "Cart", ["publicCart", "cart"], cartCount() ? String(cartCount()) : "")}
     </nav>
   `;
 }
@@ -820,7 +841,7 @@ function renderHeader() {
         ${isSignedIn() ? `<span class="signed-user" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button>` : `<a class="header-action login-action" href="/login.html"><span class="person-icon" aria-hidden="true"></span><span>Login</span><span class="chevron">v</span></a>`}
         <a class="header-action seller-action" href="#seller"><span class="seller-icon" aria-hidden="true"></span><span>Become a Seller</span></a>
         <button class="header-action more-action" type="button"><span>More</span><span class="chevron">v</span></button>
-        <a class="header-action cart-action" href="/user/cart.html"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
+        <a class="header-action cart-action" href="/cart.html"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
       </nav>
     </header>
   `;
@@ -843,7 +864,7 @@ function renderProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
     <article class="product-card">
-      <a class="product-media" href="/user/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+      <a class="product-media" href="/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
       </a>
       <div class="product-info">
@@ -924,7 +945,7 @@ function renderMarketProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
     <article class="market-product-card">
-      <a class="market-product-media" href="/user/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+      <a class="market-product-media" href="/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
       </a>
       <div class="market-product-copy">
@@ -965,7 +986,7 @@ function renderCategoryTopBar() {
         <button class="categories-icon-button" type="button" aria-label="Search categories">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
         </button>
-        <a class="categories-icon-button" href="/user/cart.html" aria-label="Open cart">
+        <a class="categories-icon-button" href="/cart.html" aria-label="Open cart">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 5h2l1.6 10.3h10.7L20 8H7.1"/><circle cx="9" cy="20" r="1.4"/><circle cx="17.4" cy="20" r="1.4"/></svg>
           ${cartCount() ? `<strong>${cartCount()}</strong>` : ""}
         </a>
@@ -1060,6 +1081,136 @@ function renderCategoriesPage() {
           </details>
         </section>
       </div>
+    </main>
+    ${renderBottomNav()}
+  `;
+}
+
+function renderCloneBackBar(title) {
+  return `
+    <header class="clone-topbar">
+      <a class="clone-back-button" href="/index.html" aria-label="Back to home">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </a>
+      <h1>${escapeHtml(title)}</h1>
+    </header>
+  `;
+}
+
+function renderAccountIcon(icon) {
+  const icons = {
+    card: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="12" height="15" rx="2"/><path d="M8 8h6M8 11h4M4 8.5h3M4 12h3M4 15.5h3"/></svg>`,
+    language: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h8"/><path d="M9 3v2"/><path d="M7 5c.5 3.2 2.2 5.8 5 8"/><path d="M12 5c-.5 3-2.4 5.8-6 8"/><path d="M15 21l3.7-9 3.3 9"/><path d="M16.3 18h4.4"/></svg>`,
+    bell: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 10a5.5 5.5 0 0 1 11 0v4l2 2.5h-15l2-2.5z"/><path d="M10 19a2 2 0 0 0 4 0"/><path d="M18.5 6.2 20 4.7M5.5 6.2 4 4.7"/></svg>`,
+    help: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14.5a8 8 0 0 1 16 0v4.2a1.6 1.6 0 0 1-1.6 1.6H16v-6h4"/><path d="M8 20.3H5.6A1.6 1.6 0 0 1 4 18.7v-4.2h4z"/></svg>`,
+    shop: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14l-1-4H6z"/><path d="M6 9v10h12V9"/><path d="M9 13h6"/></svg>`,
+    document: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l3 3V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M14 3.5V7h3"/><path d="M9 11h5M9 14h6M9 17h4"/></svg>`,
+    question: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M9.8 9.7a2.4 2.4 0 0 1 4.5 1.2c0 1.8-2.3 1.9-2.3 3.5"/><path d="M12 17.4h.01"/></svg>`
+  };
+  return icons[icon] || icons.question;
+}
+
+function renderAccountListRow([icon, title, subtitle]) {
+  return `
+    <a class="account-list-row" href="/login.html?next=${encodeURIComponent("/account.html")}">
+      <span class="account-row-icon">${renderAccountIcon(icon)}</span>
+      <span>
+        <strong>${escapeHtml(title)}</strong>
+        ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ""}
+      </span>
+      <svg class="account-row-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+    </a>
+  `;
+}
+
+function renderAccountPage() {
+  return `
+    <main class="clone-page account-page">
+      ${renderCloneBackBar("Account")}
+
+      <section class="account-login-strip">
+        <span>Log in to get exclusive offers</span>
+        <a href="/login.html?next=${encodeURIComponent("/account.html")}">Log In</a>
+      </section>
+
+      <section class="account-section">
+        <h2>Finance On UPI</h2>
+        ${renderAccountListRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate FK UPI and pay in 3 months"])}
+      </section>
+
+      <section class="account-section language-section">
+        <h2>Try Flipkart in your language</h2>
+        <div class="language-chip-row" aria-label="Language options">
+          <a href="/login.html">हिंदी</a>
+          <a href="/login.html">தமிழ்</a>
+          <a href="/login.html">తెలుగు</a>
+          <a href="/login.html">ಕನ್ನಡ</a>
+          <a class="more" href="/login.html">+8 more</a>
+        </div>
+      </section>
+
+      <section class="account-section">
+        <h2>Account Settings</h2>
+        ${accountSettingsRows.map(renderAccountListRow).join("")}
+      </section>
+
+      <section class="account-section">
+        <h2>Earn with Flipkart</h2>
+        ${renderAccountListRow(["shop", "Sell on Flipkart", ""])}
+      </section>
+
+      <section class="account-section">
+        <h2>Feedback & Information</h2>
+        ${accountInfoRows.map(renderAccountListRow).join("")}
+      </section>
+    </main>
+    ${renderBottomNav()}
+  `;
+}
+
+function renderCartEmptyGraphic() {
+  return `
+    <div class="cart-empty-graphic" aria-hidden="true">
+      <span>f</span>
+      <svg viewBox="0 0 160 110">
+        <path d="M16 78h128"/>
+        <path d="M42 36h14l13 44h48l12-32H64"/>
+        <path d="M70 86a7 7 0 1 0 0 .2"/>
+        <path d="M112 86a7 7 0 1 0 0 .2"/>
+        <path d="M77 58v14M94 58v14M111 58v14"/>
+        <path d="M44 58H24M36 70H11"/>
+      </svg>
+    </div>
+  `;
+}
+
+function renderPublicCartPage() {
+  return `
+    <main class="clone-page public-cart-page">
+      ${renderCloneBackBar("My Cart")}
+
+      <section class="cart-empty-panel">
+        ${renderCartEmptyGraphic()}
+        <h2>Missing Cart items?</h2>
+        <a class="cart-login-button" href="/login.html?next=${encodeURIComponent("/cart.html")}">Login</a>
+        <a class="cart-continue-link" href="/index.html">Continue Shopping</a>
+      </section>
+
+      <section class="cart-suggestion-section">
+        <h2>Suggested for You</h2>
+        <p>Based on Your Activity</p>
+        <article class="cart-suggestion-card">
+          <img src="${escapeHtml(cartSuggestionProduct.image)}" alt="${escapeHtml(cartSuggestionProduct.title)}" loading="lazy">
+          <strong>${escapeHtml(cartSuggestionProduct.title)}</strong>
+          <span>${escapeHtml(cartSuggestionProduct.price)}</span>
+          <small><b></b>Assured</small>
+          <a href="/login.html?next=${encodeURIComponent("/cart.html")}">Add to cart</a>
+        </article>
+      </section>
+
+      <section class="cart-recent-section">
+        <h2>Recently Viewed</h2>
+      </section>
     </main>
     ${renderBottomNav()}
   `;
@@ -1649,6 +1800,10 @@ function render() {
     app.innerHTML = renderUserModulePage();
   } else if (page === "categories") {
     app.innerHTML = renderCategoriesPage();
+  } else if (page === "account") {
+    app.innerHTML = renderAccountPage();
+  } else if (page === "publicCart") {
+    app.innerHTML = renderPublicCartPage();
   } else if (page === "owner") {
     window.location.href = "/user/index.html";
   } else if (page === "admin") {
@@ -1753,6 +1908,8 @@ async function bootstrap() {
     state.authReady = true;
     if (page === "home" || page === "categories") {
       await loadProducts();
+    } else if (publicPages.has(page)) {
+      render();
     } else {
       state.message = "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env.";
       state.messageType = "error";

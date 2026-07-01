@@ -12,6 +12,8 @@ export default defineConfig({
       input: {
         home: htmlEntry("./index.html"),
         categories: htmlEntry("./categories.html"),
+        account: htmlEntry("./account.html"),
+        publicCart: htmlEntry("./cart.html"),
         login: htmlEntry("./login.html"),
         userHome: htmlEntry("./user/index.html"),
         userCart: htmlEntry("./user/cart.html"),
