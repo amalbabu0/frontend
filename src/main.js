@@ -542,8 +542,8 @@ async function saveCart(nextCart) {
 async function addToCart(productId, goToCart = false) {
   clearMessage();
   if (!isSignedIn()) {
-    const nextUrl = goToCart ? "/user/cart.html" : "/index.html";
-    window.location.href = `/login.html?next=${encodeURIComponent(nextUrl)}`;
+    const nextUrl = goToCart ? "/user/cart/" : "/";
+    window.location.href = `/login/?next=${encodeURIComponent(nextUrl)}`;
     return;
   }
   const product = productById(productId);
@@ -576,7 +576,7 @@ async function addToCart(productId, goToCart = false) {
     render();
     await saveCart(nextCart);
     if (goToCart) {
-      window.location.href = "/user/cart.html";
+      window.location.href = "/user/cart/";
       return;
     }
     setMessage(`${product.name} added to cart.`);
@@ -649,7 +649,7 @@ async function submitOrder(status) {
     setMessage(`${data.order.id} saved as ${data.order.status}.`);
     await Promise.all([loadOrders(), loadCache()]);
     if (status === "success") {
-      window.location.href = "/user/orders.html";
+      window.location.href = "/user/orders/";
     }
   } catch (error) {
     setMessage(error.message, "error");
@@ -723,7 +723,7 @@ async function submitAuth() {
       return;
     }
 
-    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/index.html";
+    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/";
     window.location.href = nextUrl;
   } catch (error) {
     setMessage(error.message, "error");
@@ -742,7 +742,7 @@ async function signOut() {
   state.orders = [];
   state.cache = null;
   state.health = null;
-  window.location.href = "/login.html";
+  window.location.href = "/login/";
 }
 
 function renderMessage() {
@@ -795,12 +795,12 @@ function bottomNavLink(href, icon, label, keys, badge = "") {
 function renderMonitoringBottomNav() {
   return `
     <nav class="bottom-nav monitor-bottom-nav" aria-label="Monitoring privilege navigation">
-      ${bottomNavLink("/development/soc.html", "S", "SOC", "soc")}
-      ${bottomNavLink("/development/system.html", "M", "System", "system")}
-      ${bottomNavLink("/development/web-analytics.html", "W", "Web", "webAnalytics")}
-      ${bottomNavLink("/development/speed-insights.html", "F", "Speed", "speedInsights")}
-      ${bottomNavLink("/development/observability.html", "O", "Observe", "observability")}
-      ${bottomNavLink("/development/analytics.html", "A", "Analytics", "analytics")}
+      ${bottomNavLink("/development/soc/", "S", "SOC", "soc")}
+      ${bottomNavLink("/development/system/", "M", "System", "system")}
+      ${bottomNavLink("/development/web-analytics/", "W", "Web", "webAnalytics")}
+      ${bottomNavLink("/development/speed-insights/", "F", "Speed", "speedInsights")}
+      ${bottomNavLink("/development/observability/", "O", "Observe", "observability")}
+      ${bottomNavLink("/development/analytics/", "A", "Analytics", "analytics")}
     </nav>
   `;
 }
@@ -808,10 +808,10 @@ function renderMonitoringBottomNav() {
 function renderBottomNav() {
   return `
     <nav class="bottom-nav module-bottom-nav" aria-label="Customer navigation">
-      ${bottomNavLink("/index.html", "home", "Home", "home")}
-      ${bottomNavLink("/categories.html", "categories", "Categories", "categories")}
-      ${bottomNavLink("/account.html", "account", "Account", ["account", "user", "orders", "cache"])}
-      ${bottomNavLink("/cart.html", "cart", "Cart", ["publicCart", "cart"], cartCount() ? String(cartCount()) : "")}
+      ${bottomNavLink("/", "home", "Home", "home")}
+      ${bottomNavLink("/categories/", "categories", "Categories", "categories")}
+      ${bottomNavLink("/account/", "account", "Account", ["account", "user", "orders", "cache"])}
+      ${bottomNavLink("/cart/", "cart", "Cart", ["publicCart", "cart"], cartCount() ? String(cartCount()) : "")}
     </nav>
   `;
 }
@@ -820,11 +820,11 @@ function renderHeader() {
   return `
     <header class="top-header customer-header">
       <div class="brand-tabs" aria-label="zaki services">
-        <a class="brand-tab primary" href="/index.html" aria-label="zaki home">
+        <a class="brand-tab primary" href="/" aria-label="zaki home">
           <span class="flip-mark">z</span>
           <span class="brand-stack"><span>zaki</span><small>Explore Plus</small></span>
         </a>
-        <a class="brand-tab travel" href="/index.html#featured-products">
+        <a class="brand-tab travel" href="/#featured-products">
           <span class="travel-mark">Air</span>
           <span>Travel</span>
         </a>
@@ -832,17 +832,17 @@ function renderHeader() {
       <div class="delivery-location">
         <span class="pin-dot" aria-hidden="true"></span>
         <span>Location not set</span>
-        <a href="/login.html">Select delivery location</a>
+        <a href="/login/">Select delivery location</a>
       </div>
       <div class="search-wrap market-search">
         <span class="search-icon" aria-hidden="true"></span>
         <input data-filter="query" data-focus-key="search" type="search" value="${escapeHtml(state.filters.query)}" placeholder="Search for Products, Brands and More">
       </div>
       <nav class="header-actions" aria-label="Customer actions">
-        ${isSignedIn() ? `<span class="signed-user" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button>` : `<a class="header-action login-action" href="/login.html"><span class="person-icon" aria-hidden="true"></span><span>Login</span><span class="chevron">v</span></a>`}
+        ${isSignedIn() ? `<span class="signed-user" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button>` : `<a class="header-action login-action" href="/login/"><span class="person-icon" aria-hidden="true"></span><span>Login</span><span class="chevron">v</span></a>`}
         <a class="header-action seller-action" href="#seller"><span class="seller-icon" aria-hidden="true"></span><span>Become a Seller</span></a>
         <button class="header-action more-action" type="button"><span>More</span><span class="chevron">v</span></button>
-        <a class="header-action cart-action" href="/cart.html"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
+        <a class="header-action cart-action" href="/cart/"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
       </nav>
     </header>
   `;
@@ -865,7 +865,7 @@ function renderProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
     <article class="product-card">
-      <a class="product-media" href="/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+      <a class="product-media" href="/cart/" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
       </a>
       <div class="product-info">
@@ -946,7 +946,7 @@ function renderMarketProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
     <article class="market-product-card">
-      <a class="market-product-media" href="/cart.html" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+      <a class="market-product-media" href="/cart/" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
       </a>
       <div class="market-product-copy">
@@ -979,7 +979,7 @@ function renderFaqItems() {
 function renderCategoryTopBar() {
   return `
     <header class="categories-topbar">
-      <a class="categories-icon-button" href="/index.html" aria-label="Back to home">
+      <a class="categories-icon-button" href="/" aria-label="Back to home">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/><path d="M9 12h11"/></svg>
       </a>
       <h1>All Categories</h1>
@@ -987,7 +987,7 @@ function renderCategoryTopBar() {
         <button class="categories-icon-button" type="button" aria-label="Search categories">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
         </button>
-        <a class="categories-icon-button" href="/cart.html" aria-label="Open cart">
+        <a class="categories-icon-button" href="/cart/" aria-label="Open cart">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 5h2l1.6 10.3h10.7L20 8H7.1"/><circle cx="9" cy="20" r="1.4"/><circle cx="17.4" cy="20" r="1.4"/></svg>
           ${cartCount() ? `<strong>${cartCount()}</strong>` : ""}
         </a>
@@ -1055,7 +1055,7 @@ function renderCategoriesPage() {
             <h2>New & Upcoming Launches</h2>
             <div class="category-launch-grid">
               ${categoryLaunchItems.map(renderCategoryLaunchCard).join("")}
-              <a class="category-view-all" href="/index.html#featured-products" aria-label="View all launches">
+              <a class="category-view-all" href="/#featured-products" aria-label="View all launches">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15"/><path d="m5 12 7 7 7-7"/></svg>
                 <strong>View All</strong>
               </a>
@@ -1090,7 +1090,7 @@ function renderCategoriesPage() {
 function renderCloneBackBar(title) {
   return `
     <header class="clone-topbar">
-      <a class="clone-back-button" href="/index.html" aria-label="Back to home">
+      <a class="clone-back-button" href="/" aria-label="Back to home">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </a>
       <h1>${escapeHtml(title)}</h1>
@@ -1113,7 +1113,7 @@ function renderAccountIcon(icon) {
 
 function renderAccountListRow([icon, title, subtitle]) {
   return `
-    <a class="account-list-row" href="/login.html?next=${encodeURIComponent("/account.html")}">
+    <a class="account-list-row" href="/login/?next=${encodeURIComponent("/account/")}">
       <span class="account-row-icon">${renderAccountIcon(icon)}</span>
       <span>
         <strong>${escapeHtml(title)}</strong>
@@ -1131,7 +1131,7 @@ function renderAccountPage() {
 
       <section class="account-login-strip">
         <span>Log in to get exclusive offers</span>
-        <a href="/login.html?next=${encodeURIComponent("/account.html")}">Log In</a>
+        <a href="/login/?next=${encodeURIComponent("/account/")}">Log In</a>
       </section>
 
       <section class="account-section">
@@ -1142,11 +1142,11 @@ function renderAccountPage() {
       <section class="account-section language-section">
         <h2>Try zaki in your language</h2>
         <div class="language-chip-row" aria-label="Language options">
-          <a href="/login.html">हिंदी</a>
-          <a href="/login.html">தமிழ்</a>
-          <a href="/login.html">తెలుగు</a>
-          <a href="/login.html">ಕನ್ನಡ</a>
-          <a class="more" href="/login.html">+8 more</a>
+          <a href="/login/">हिंदी</a>
+          <a href="/login/">தமிழ்</a>
+          <a href="/login/">తెలుగు</a>
+          <a href="/login/">ಕನ್ನಡ</a>
+          <a class="more" href="/login/">+8 more</a>
         </div>
       </section>
 
@@ -1193,8 +1193,8 @@ function renderPublicCartPage() {
       <section class="cart-empty-panel">
         ${renderCartEmptyGraphic()}
         <h2>Missing Cart items?</h2>
-        <a class="cart-login-button" href="/login.html?next=${encodeURIComponent("/cart.html")}">Login</a>
-        <a class="cart-continue-link" href="/index.html">Continue Shopping</a>
+        <a class="cart-login-button" href="/login/?next=${encodeURIComponent("/cart/")}">Login</a>
+        <a class="cart-continue-link" href="/">Continue Shopping</a>
       </section>
 
       <section class="cart-suggestion-section">
@@ -1205,7 +1205,7 @@ function renderPublicCartPage() {
           <strong>${escapeHtml(cartSuggestionProduct.title)}</strong>
           <span>${escapeHtml(cartSuggestionProduct.price)}</span>
           <small><b></b>Assured</small>
-          <a href="/login.html?next=${encodeURIComponent("/cart.html")}">Add to cart</a>
+          <a href="/login/?next=${encodeURIComponent("/cart/")}">Add to cart</a>
         </article>
       </section>
 
@@ -1342,7 +1342,7 @@ function renderCartPage() {
             <p class="eyebrow">Shopping cart</p>
             <h1>My cart</h1>
           </div>
-          <a class="text-link" href="/index.html">Continue shopping</a>
+          <a class="text-link" href="/">Continue shopping</a>
         </div>
         ${renderMessage()}
         <div class="cart-list">
@@ -1518,10 +1518,10 @@ function renderUserModulePage() {
   ].join("");
   const content = `
     <section class="module-grid two">
-      ${renderModuleCard("Shopping profile", "Manage the customer journey from browsing products to cart and order history.", `<a class="btn primary" href="/index.html">Shop products</a>`)}
-      ${renderModuleCard("Current cart", `${cartCount()} items are saved in this user's Upstash cart cache.`, `<a class="btn ghost" href="/user/cart.html">Open cart</a>`)}
-      ${renderModuleCard("Latest order", latestOrder ? `${escapeHtml(latestOrder.id)} is currently ${escapeHtml(latestOrder.status)}.` : "No orders created yet.", `<a class="btn ghost" href="/user/orders.html">View orders</a>`)}
-      ${renderModuleCard("Customer cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/user/cache.html">View cache</a>`)}
+      ${renderModuleCard("Shopping profile", "Manage the customer journey from browsing products to cart and order history.", `<a class="btn primary" href="/">Shop products</a>`)}
+      ${renderModuleCard("Current cart", `${cartCount()} items are saved in this user's Upstash cart cache.`, `<a class="btn ghost" href="/user/cart/">Open cart</a>`)}
+      ${renderModuleCard("Latest order", latestOrder ? `${escapeHtml(latestOrder.id)} is currently ${escapeHtml(latestOrder.status)}.` : "No orders created yet.", `<a class="btn ghost" href="/user/orders/">View orders</a>`)}
+      ${renderModuleCard("Customer cache", `Cart and order keys are scoped to this Supabase user id.`, `<a class="btn ghost" href="/user/cache/">View cache</a>`)}
     </section>
   `;
   return renderModuleShell("user", "Customer module", "Customer home for account, cart, checkout and order history.", metrics, content);
@@ -1569,10 +1569,10 @@ function renderAdminModulePage() {
   ].join("");
   const content = `
     <section class="module-grid two">
-      ${renderModuleCard("Order operations", `Successful: ${statusCount("success")}, failed: ${statusCount("failed")}, cancelled: ${statusCount("cancelled")}.`, `<a class="btn ghost" href="/user/orders.html">Open orders</a>`)}
-      ${renderModuleCard("Cache operations", "Warm, clear, and inspect user cache keys from the operations page.", `<a class="btn ghost" href="/admin/cache.html">Open cache</a>`)}
-      ${renderModuleCard("Product operations", "Catalog is code-backed and cached through Upstash for storefront speed.", `<a class="btn ghost" href="/owner/index.html">Open owner</a>`)}
-      ${renderModuleCard("Access note", "These module pages are session protected. Add Supabase role claims later for strict permission enforcement.", `<a class="btn primary" href="/development/index.html">Monitor system</a>`)}
+      ${renderModuleCard("Order operations", `Successful: ${statusCount("success")}, failed: ${statusCount("failed")}, cancelled: ${statusCount("cancelled")}.`, `<a class="btn ghost" href="/user/orders/">Open orders</a>`)}
+      ${renderModuleCard("Cache operations", "Warm, clear, and inspect user cache keys from the operations page.", `<a class="btn ghost" href="/admin/cache/">Open cache</a>`)}
+      ${renderModuleCard("Product operations", "Catalog is code-backed and cached through Upstash for storefront speed.", `<a class="btn ghost" href="/owner/">Open owner</a>`)}
+      ${renderModuleCard("Access note", "These module pages are session protected. Add Supabase role claims later for strict permission enforcement.", `<a class="btn primary" href="/development/">Monitor system</a>`)}
     </section>
   `;
   return renderModuleShell("admin", "Admin module", "Administrative command center for orders, cache, catalog and access status.", metrics, content);
@@ -1699,7 +1699,7 @@ function renderMonitoringModulePage() {
   const content = `
     <section class="module-grid two">
       ${renderModuleCard("API health", health.error ? escapeHtml(health.error) : `Backend reports ok=${escapeHtml(Boolean(health.ok))}.`, `<button class="btn ghost" type="button" data-action="reload-monitoring">Recheck</button>`)}
-      ${renderModuleCard("Deployment", `Frontend calls ${escapeHtml(apiBaseUrl)}. Verify Vercel env vars when a module is blank.`, `<a class="btn ghost" href="/admin/cache.html">Cache page</a>`)}
+      ${renderModuleCard("Deployment", `Frontend calls ${escapeHtml(apiBaseUrl)}. Verify Vercel env vars when a module is blank.`, `<a class="btn ghost" href="/admin/cache/">Cache page</a>`)}
     </section>
     <section class="module-panel">
       <div class="section-title"><div><p class="eyebrow">Runtime cache</p><h2>Observed keys</h2></div></div>
@@ -1713,10 +1713,10 @@ function renderLoginPage() {
     return `
       <main class="login-page flip-login-page">
         <header class="flip-login-header">
-          <a class="flip-login-close" href="/index.html" aria-label="Close login">
+          <a class="flip-login-close" href="/" aria-label="Close login">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
           </a>
-          <a class="flip-login-brand" href="/index.html" aria-label="zaki home">
+          <a class="flip-login-brand" href="/" aria-label="zaki home">
             <span>zaki</span><i aria-hidden="true">z</i>
           </a>
         </header>
@@ -1742,10 +1742,10 @@ function renderLoginPage() {
   return `
     <main class="login-page flip-login-page">
       <header class="flip-login-header">
-        <a class="flip-login-close" href="/index.html" aria-label="Close login">
+        <a class="flip-login-close" href="/" aria-label="Close login">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
         </a>
-        <a class="flip-login-brand" href="/index.html" aria-label="zaki home">
+        <a class="flip-login-brand" href="/" aria-label="zaki home">
           <span>zaki</span><i aria-hidden="true">z</i>
         </a>
       </header>
@@ -1761,7 +1761,7 @@ function renderLoginPage() {
           </div>
         </label>
         <button class="flip-email-link" type="button" data-action="login-view" data-view="email">Use Email-ID</button>
-        <p class="login-consent">By continuing, you confirm that you are above 18 years of age, and you agree to zaki's <a href="/login.html">Terms of Use</a> and <a href="/login.html">Privacy Policy</a></p>
+        <p class="login-consent">By continuing, you confirm that you are above 18 years of age, and you agree to zaki's <a href="/login/">Terms of Use</a> and <a href="/login/">Privacy Policy</a></p>
       </section>
 
       <div class="flip-login-bottom">
@@ -1777,7 +1777,7 @@ function renderProtectedPrompt() {
       <section class="login-card solo">
         <p class="eyebrow">Session</p>
         <h1>Login required</h1>
-        <a class="btn primary wide" href="/login.html?next=${encodeURIComponent(window.location.pathname)}">Go to login</a>
+        <a class="btn primary wide" href="/login/?next=${encodeURIComponent(window.location.pathname)}">Go to login</a>
       </section>
     </main>
   `;
@@ -1836,13 +1836,13 @@ function render() {
   } else if (page === "publicCart") {
     app.innerHTML = renderPublicCartPage();
   } else if (page === "owner") {
-    window.location.href = "/user/index.html";
+    window.location.href = "/user/";
   } else if (page === "admin") {
-    window.location.href = "/user/index.html";
+    window.location.href = "/user/";
   } else if (page === "monitoring") {
-    window.location.href = "/user/index.html";
+    window.location.href = "/user/";
   } else if (monitoringPages.has(page)) {
-    window.location.href = "/user/index.html";
+    window.location.href = "/user/";
   } else {
     app.innerHTML = renderHomePage();
   }
@@ -1960,19 +1960,19 @@ async function bootstrap() {
   state.authReady = true;
 
   if (retiredModulePathPattern.test(window.location.pathname)) {
-    const target = window.location.pathname.includes("/admin/cache") ? "/user/cache.html" : "/user/index.html";
-    window.location.href = state.session ? target : `/login.html?next=${encodeURIComponent(target)}`;
+    const target = window.location.pathname.includes("/admin/cache") ? "/user/cache/" : "/user/";
+    window.location.href = state.session ? target : `/login/?next=${encodeURIComponent(target)}`;
     return;
   }
 
   if (page === "login" && state.session) {
-    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/index.html";
+    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/";
     window.location.href = nextUrl;
     return;
   }
 
   if (protectedPages.has(page) && !state.session) {
-    window.location.href = `/login.html?next=${encodeURIComponent(window.location.pathname)}`;
+    window.location.href = `/login/?next=${encodeURIComponent(window.location.pathname)}`;
     return;
   }
 
@@ -1982,7 +1982,7 @@ async function bootstrap() {
   supabase.auth.onAuthStateChange(async (_event, nextSession) => {
     state.session = nextSession;
     if (!nextSession && protectedPages.has(page)) {
-      window.location.href = "/login.html";
+      window.location.href = "/login/";
       return;
     }
     if (nextSession && page !== "login") {

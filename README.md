@@ -1,36 +1,36 @@
-# ScaleMart Commerce Frontend
+# zaki Commerce Frontend
 
 Vanilla Vite multi-page ecommerce frontend. Pages are separated by role directories and share `src/main.js` plus `src/app.css`.
 
 ## Role Directories
 
 ```text
-/user/index.html                    User/customer dashboard
-/user/cart.html                     User cart and checkout
-/user/orders.html                   User order history
+/user/                              User/customer dashboard
+/user/cart/                         User cart and checkout
+/user/orders/                       User order history
 
-/owner/index.html                   Product owner/shop owner dashboard
-/owner/inventory.html               Product owner inventory
-/owner/cache.html                   Product owner cache view
+/owner/                             Product owner/shop owner dashboard
+/owner/inventory/                   Product owner inventory
+/owner/cache/                       Product owner cache view
 
-/admin/index.html                   Admin operations dashboard
-/admin/orders.html                  Admin order operations
-/admin/cache.html                   Admin cache operations
+/admin/                             Admin operations dashboard
+/admin/orders/                      Admin order operations
+/admin/cache/                       Admin cache operations
 
-/development/index.html             Development monitoring overview
-/development/soc.html               SOC monitoring
-/development/system.html            System monitoring
-/development/web-analytics.html     Web analytics
-/development/speed-insights.html    Speed insights
-/development/observability.html     Observability
-/development/analytics.html         Analytics
+/development/                       Development monitoring overview
+/development/soc/                   SOC monitoring
+/development/system/                System monitoring
+/development/web-analytics/         Web analytics
+/development/speed-insights/        Speed insights
+/development/observability/         Observability
+/development/analytics/             Analytics
 ```
 
 
 ## Access Rules
 
 ```text
-Public: /index.html, /login.html
+Public: /, /login/
 Protected by Supabase session: /user/*, /owner/*, /admin/*, /development/*
 ```
 ## Env
