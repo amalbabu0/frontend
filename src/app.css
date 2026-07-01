@@ -5719,6 +5719,26 @@ body[data-page="account"] .clone-page {
   object-fit: cover;
 }
 
+.signed-settings-section {
+  margin-top: 6px;
+}
+
+.signed-logout-section {
+  display: grid;
+  padding: 16px 14px 18px;
+  background: #ffffff;
+}
+
+.signed-logout-button {
+  min-height: 38px;
+  border: 1px solid #dfe5ee;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #0b61ff;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
 body[data-page="account"] .bottom-nav,
 body[data-page="cart"] .bottom-nav,
 body[data-page="publicCart"] .bottom-nav {

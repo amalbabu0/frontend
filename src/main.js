@@ -1334,6 +1334,14 @@ function renderCloneBackBar(title) {
 
 function renderAccountIcon(icon) {
   const icons = {
+    plus: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 14 9l5.6 2-5.6 2-2 5.5-2-5.5-5.6-2L10 9z"/><path d="M19 4v4M17 6h4"/></svg>`,
+    devices: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3.5" width="10" height="17" rx="2"/><path d="M10 6h4M11 18h2"/></svg>`,
+    user: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2z"/><path d="M5 20.4c.7-3.8 3.3-5.8 7-5.8s6.3 2 7 5.8"/></svg>`,
+    wallet: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h13.5A1.5 1.5 0 0 1 20 9v9.5H5A2 2 0 0 1 3 16.5v-7A2 2 0 0 1 5 7.5z"/><path d="M5 7.5 16 4.8a1.5 1.5 0 0 1 1.8 1.1l.4 1.6"/><path d="M16.2 13h3.8v3h-3.8a1.5 1.5 0 0 1 0-3z"/></svg>`,
+    location: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.5 6-11a6 6 0 1 0-12 0c0 5.5 6 11 6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`,
+    privacy: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 18 6v5.2c0 4-2.4 7.4-6 9.3-3.6-1.9-6-5.3-6-9.3V6z"/><path d="M9.5 12.2 11.3 14l3.4-4"/></svg>`,
+    edit: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19h4.2L19 9.2 14.8 5 5 14.8z"/><path d="m13.6 6.2 4.2 4.2"/><path d="M4 21h16"/></svg>`,
+    chat: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v10H9l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>`,
     card: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="12" height="15" rx="2"/><path d="M8 8h6M8 11h4M4 8.5h3M4 12h3M4 15.5h3"/></svg>`,
     language: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h8"/><path d="M9 3v2"/><path d="M7 5c.5 3.2 2.2 5.8 5 8"/><path d="M12 5c-.5 3-2.4 5.8-6 8"/><path d="M15 21l3.7-9 3.3 9"/><path d="M16.3 18h4.4"/></svg>`,
     bell: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 10a5.5 5.5 0 0 1 11 0v4l2 2.5h-15l2-2.5z"/><path d="M10 19a2 2 0 0 0 4 0"/><path d="M18.5 6.2 20 4.7M5.5 6.2 4 4.7"/></svg>`,
@@ -1407,8 +1415,22 @@ function renderRecentlyViewedStore([title, image]) {
 function renderSignedInAccountPage() {
   const financeRows = [
     ["card", "Pre-Approved Supermoney Credit Card", "1% cashback on UPI & Non-UPI | 100% Approval | Lifetime Free"],
-    ["card", "Flipkart EMI - Only For You!", "Unlock Rs1 lakh | No Cost EMI"],
-    ["document", "Apply Now for Flipkart SBI Credit Card", "5% Cashback | Rs750 zaki Gift Card & Rs500 Cleartrip Voucher"]
+    ["card", "zaki EMI - Only For You!", "Unlock Rs1 lakh | No Cost EMI"],
+    ["document", "Apply Now for zaki SBI Credit Card", "5% Cashback | Rs750 zaki Gift Card & Rs500 Cleartrip Voucher"]
+  ];
+  const signedAccountSettingsRows = [
+    ["plus", "zaki Plus", ""],
+    ["devices", "Manage Devices", ""],
+    ["user", "Edit Profile", ""],
+    ["wallet", "Saved Credit / Debit & Gift Cards", ""],
+    ["location", "Saved Addresses", ""],
+    ["language", "Select Language", ""],
+    ["bell", "Notification Settings", ""],
+    ["privacy", "Privacy Center", ""]
+  ];
+  const signedActivityRows = [
+    ["edit", "Reviews", ""],
+    ["chat", "Questions & Answers", ""]
   ];
   const recentlyViewedStores = [
     ["Bike store", "https://images.unsplash.com/photo-1558981852-426c6c22a060?auto=format&fit=crop&w=260&q=80"],
@@ -1441,7 +1463,7 @@ function renderSignedInAccountPage() {
 
       <section class="account-section signed-finance-section">
         <h2>Finance On UPI</h2>
-        ${renderSignedAccountRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate FK UPI and pay in 3 months"])}
+        ${renderSignedAccountRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate zaki UPI and pay in 3 months"])}
       </section>
 
       <section class="account-section recent-stores-section">
@@ -1449,6 +1471,30 @@ function renderSignedInAccountPage() {
         <div class="recent-store-strip">
           ${recentlyViewedStores.map(renderRecentlyViewedStore).join("")}
         </div>
+      </section>
+
+      <section class="account-section signed-settings-section">
+        <h2>Account Settings</h2>
+        ${signedAccountSettingsRows.map(renderSignedAccountRow).join("")}
+      </section>
+
+      <section class="account-section signed-settings-section">
+        <h2>My Activity</h2>
+        ${signedActivityRows.map(renderSignedAccountRow).join("")}
+      </section>
+
+      <section class="account-section signed-settings-section">
+        <h2>Earn with zaki</h2>
+        ${renderSignedAccountRow(["shop", "Sell on zaki", ""])}
+      </section>
+
+      <section class="account-section signed-settings-section">
+        <h2>Feedback & Information</h2>
+        ${accountInfoRows.map(renderSignedAccountRow).join("")}
+      </section>
+
+      <section class="signed-logout-section" aria-label="Account sign out">
+        <button class="signed-logout-button" type="button" data-action="sign-out">Log Out</button>
       </section>
     </main>
     ${renderBottomNav()}
