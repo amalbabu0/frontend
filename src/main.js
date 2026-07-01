@@ -85,6 +85,17 @@ const trendItems = [
   ["Swishy", "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=500&q=80"]
 ];
 
+const mobileDealItems = [
+  ["Strong fragrance", "Up to 65% Off", "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=420&q=80"],
+  ["Foot massager", "Just ₹1,999*", "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=420&q=80"],
+  ["Men's sneakers", "Min. 50% Off", "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=420&q=80"]
+];
+
+const spotlightItems = [
+  ["Men's Shoes, Sandals...", "Min. 40% Off", "https://images.unsplash.com/photo-1543508282-6319a3e2621f?auto=format&fit=crop&w=520&q=80"],
+  ["Men's shoes", "Min 50% Off", "https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=520&q=80"]
+];
+
 const escapeMap = {
   "&": "&amp;",
   "<": "&lt;",
@@ -726,6 +737,25 @@ function renderProductCard(product) {
   `;
 }
 
+function renderMobileDealCard([title, offer, image]) {
+  return `
+    <article class="mobile-deal-card">
+      <img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy">
+      <strong>${escapeHtml(offer)}</strong>
+      <span>${escapeHtml(title)}</span>
+    </article>
+  `;
+}
+
+function renderSpotlightCard([title, offer, image]) {
+  return `
+    <article class="spotlight-card">
+      <img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy">
+      <span>${escapeHtml(title)}</span>
+      <strong>${escapeHtml(offer)}</strong>
+    </article>
+  `;
+}
 function renderMarketProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
@@ -777,6 +807,18 @@ function renderHomePage() {
             </div>
           </article>
         `).join("")}
+      </section>
+      <div class="mobile-promo-dots" aria-hidden="true"><span></span><span class="active"></span><span></span></div>
+
+      <section class="mobile-deal-strip" aria-label="Hot deals">
+        ${mobileDealItems.map(renderMobileDealCard).join("")}
+      </section>
+
+      <section class="mobile-spotlight" aria-labelledby="spotlightTitle">
+        <h2 id="spotlightTitle">Spotlight's on</h2>
+        <div class="spotlight-grid">
+          ${spotlightItems.map(renderSpotlightCard).join("")}
+        </div>
       </section>
 
       <section class="trend-band" aria-labelledby="trendTitle">
