@@ -64,36 +64,85 @@ const storefrontCategories = [
   ["Electronics", "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=160&q=80"],
   ["Home", "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=160&q=80"],
   ["Appliances", "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=160&q=80"],
-  ["Toys", "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=160&q=80"],
-  ["Food", "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=160&q=80"],
-  ["Auto", "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=160&q=80"],
-  ["Sports", "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=160&q=80"],
-  ["Books", "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=160&q=80"],
+  ["Toys, Baby..", "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=160&q=80"],
+  ["Food & Health", "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=160&q=80"],
+  ["Auto Accessories", "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=160&q=80"],
+  ["2 Wheelers", "https://images.unsplash.com/photo-1519751138087-5bf79df62d5b?auto=format&fit=crop&w=160&q=80"],
+  ["Sports & Fitness", "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=160&q=80"],
+  ["Books & Media", "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=160&q=80"],
   ["Furniture", "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=160&q=80"]
 ];
 
 const promoTiles = [
-  { title: "50 MP camera phones", subtitle: "Coming soon", badge: "AD", image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=80", tone: "blue" },
-  { title: "Snapdragon launches", subtitle: "Go faster from 7 July", badge: "AD", image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80", tone: "tech" },
-  { title: "Smartwatch deals", subtitle: "New era of wearables", badge: "AD", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80", tone: "dark" }
+  { title: "GOAT Sale is live", subtitle: "Biggest offers on mobiles, fashion and appliances", badge: "AD", cta: "Shop Now", image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?auto=format&fit=crop&w=1400&q=80", tone: "sale" },
+  { title: "OPPO Reno 16 Series 5G", subtitle: "Launching 2nd Jul | 50 MP telephoto camera", badge: "AD", cta: "Notify Me", image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=1400&q=80", tone: "phone" },
+  { title: "Flights, hotels and more", subtitle: "Travel deals with instant discounts", badge: "NEW", cta: "Explore", image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80", tone: "travel" }
 ];
 
 const trendItems = [
-  ["Bodycon", "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=500&q=80"],
-  ["Biophilic Decor", "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=500&q=80"],
-  ["Cropped", "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=500&q=80"],
-  ["Swishy", "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=500&q=80"]
+  ["Best of smartphones", "Mega exchange offers", "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=650&q=80"],
+  ["Grooming essentials", "Min. 50% Off", "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=650&q=80"],
+  ["Premium furniture", "From Rs. 1,999", "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=650&q=80"],
+  ["Kitchen favourites", "Top deals", "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=650&q=80"]
 ];
 
 const mobileDealItems = [
+  ["Time to upgrade", "Up to 50% Off", "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=420&q=80"],
   ["Strong fragrance", "Up to 65% Off", "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=420&q=80"],
-  ["Foot massager", "Just ₹1,999*", "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=420&q=80"],
   ["Men's sneakers", "Min. 50% Off", "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=420&q=80"]
 ];
 
 const spotlightItems = [
-  ["Men's Shoes, Sandals...", "Min. 40% Off", "https://images.unsplash.com/photo-1543508282-6319a3e2621f?auto=format&fit=crop&w=520&q=80"],
-  ["Men's shoes", "Min 50% Off", "https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=520&q=80"]
+  ["Action cameras", "From Rs. 2,999", "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=520&q=80"],
+  ["Linen co-ords", "Min. 40% Off", "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=520&q=80"]
+];
+
+const marketplaceRails = [
+  {
+    title: "Trending Gadgets & Appliances",
+    sideAd: { title: "Top Deals", subtitle: "Best of electronics", image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=720&q=80" },
+    items: [
+      ["True Wireless", "Min. 50% Off", "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=460&q=80"],
+      ["Smart Watches", "Min. 40% Off", "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=460&q=80"],
+      ["Trimmers", "Min. 50% Off", "https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=460&q=80"],
+      ["Neckband", "Popular", "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=460&q=80"],
+      ["Projectors", "From Rs. 6,999", "https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=460&q=80"],
+      ["Power Banks", "From Rs. 799", "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=460&q=80"]
+    ]
+  },
+  {
+    title: "Add to your wishlist",
+    items: [
+      ["Striped Tee, Anime shirts...", "Under Rs. 349", "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=460&q=80"],
+      ["Shop more!", "From Rs. 159", "https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=460&q=80"],
+      ["Milton, Cello & more", "From Rs. 129", "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=460&q=80"],
+      ["Men's Shoes, Sandals...", "Min. 40% Off", "https://images.unsplash.com/photo-1543508282-6319a3e2621f?auto=format&fit=crop&w=460&q=80"],
+      ["Travel backpacks", "Min. 55% Off", "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=460&q=80"],
+      ["Analog watches", "Top offers", "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=460&q=80"]
+    ]
+  },
+  {
+    title: "Fashion's Top Deals",
+    items: [
+      ["Men's Slippers & Flip Flops", "Min. 70% Off", "https://images.unsplash.com/photo-1603487742131-4160ec999306?auto=format&fit=crop&w=460&q=80"],
+      ["Men's Casual Shoes", "Min. 70% Off", "https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=460&q=80"],
+      ["Men's Sandals & Floaters", "Min. 70% Off", "https://images.unsplash.com/photo-1562273138-f46be4ebdf33?auto=format&fit=crop&w=460&q=80"],
+      ["Men's Sports Shoes", "Min. 70% Off", "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=460&q=80"],
+      ["Women's Footwear", "Min. 50% Off", "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=460&q=80"],
+      ["Ethnic Wear", "Special offer", "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=460&q=80"]
+    ]
+  },
+  {
+    title: "Home Decor & Furnishing",
+    items: [
+      ["Torches", "Top Sellers", "https://images.unsplash.com/photo-1518544801976-3e159e50e5bb?auto=format&fit=crop&w=460&q=80"],
+      ["Wall Clocks", "Top Picks", "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=460&q=80"],
+      ["Bulbs", "New Collection", "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=460&q=80"],
+      ["Bath Towels", "Widest Range", "https://images.unsplash.com/photo-1600369672770-985fd30004eb?auto=format&fit=crop&w=460&q=80"],
+      ["Curtains", "Min. 45% Off", "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=460&q=80"],
+      ["Cookware Sets", "From Rs. 499", "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=460&q=80"]
+    ]
+  }
 ];
 
 const escapeMap = {
@@ -616,9 +665,9 @@ function renderBoot() {
   return `
     <main class="boot-shell">
       <section class="boot-panel" aria-live="polite">
-        <div class="brand-mark">S</div>
+        <div class="brand-mark">f</div>
         <div>
-          <h1>ScaleMart</h1>
+          <h1>Flipkart</h1>
           <p>Loading store.</p>
         </div>
       </section>
@@ -630,10 +679,21 @@ function navLink(href, label, key) {
   return `<a class="nav-link ${page === key ? "active" : ""}" href="${href}">${label}</a>`;
 }
 
-function bottomNavLink(href, icon, label, key, badge = "") {
+function bottomNavIcon(icon) {
+  const icons = {
+    home: `<svg class="bottom-nav-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.3 12 4l9 7.3v8.2a1.5 1.5 0 0 1-1.5 1.5h-4.2v-5.8H8.7V21H4.5A1.5 1.5 0 0 1 3 19.5z"/></svg>`,
+    categories: `<svg class="bottom-nav-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>`,
+    account: `<svg class="bottom-nav-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm-7 8.1c.7-3.9 3.3-6 7-6s6.3 2.1 7 6"/></svg>`,
+    cart: `<svg class="bottom-nav-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 5h2l1.6 10.3h10.7L20 8H7.1"/><circle cx="9" cy="20" r="1.4"/><circle cx="17.4" cy="20" r="1.4"/></svg>`
+  };
+  return icons[icon] || escapeHtml(icon);
+}
+
+function bottomNavLink(href, icon, label, keys, badge = "") {
+  const isActive = Array.isArray(keys) ? keys.includes(page) : page === keys;
   return `
-    <a class="bottom-nav-link ${page === key ? "active" : ""}" href="${href}" aria-label="${escapeHtml(label)}">
-      <span class="bottom-nav-icon">${escapeHtml(icon)}</span>
+    <a class="bottom-nav-link ${isActive ? "active" : ""}" href="${href}" aria-label="${escapeHtml(label)}">
+      <span class="bottom-nav-icon">${bottomNavIcon(icon)}</span>
       <span>${escapeHtml(label)}</span>
       ${badge ? `<strong>${escapeHtml(badge)}</strong>` : ""}
     </a>
@@ -654,13 +714,13 @@ function renderMonitoringBottomNav() {
 }
 
 function renderBottomNav() {
+  const accountHref = isSignedIn() ? "/user/index.html" : `/login.html?next=${encodeURIComponent("/user/index.html")}`;
   return `
     <nav class="bottom-nav module-bottom-nav" aria-label="Customer navigation">
-      ${bottomNavLink("/index.html", "S", "Shop", "home")}
-      ${bottomNavLink("/user/index.html", "A", "Account", "user")}
-      ${bottomNavLink("/user/cart.html", "C", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
-      ${bottomNavLink("/user/orders.html", "O", "Orders", "orders")}
-      ${bottomNavLink("/user/cache.html", "K", "Cache", "cache")}
+      ${bottomNavLink("/index.html", "home", "Home", "home")}
+      ${bottomNavLink("/index.html#featured-products", "categories", "Categories", "categories")}
+      ${bottomNavLink(accountHref, "account", "Account", ["user", "orders", "cache"])}
+      ${bottomNavLink("/user/cart.html", "cart", "Cart", "cart", cartCount() ? String(cartCount()) : "")}
     </nav>
   `;
 }
@@ -668,10 +728,10 @@ function renderBottomNav() {
 function renderHeader() {
   return `
     <header class="top-header customer-header">
-      <div class="brand-tabs" aria-label="ScaleMart services">
-        <a class="brand-tab primary" href="/index.html" aria-label="ScaleMart home">
-          <span class="flip-mark">S</span>
-          <span>ScaleMart</span>
+      <div class="brand-tabs" aria-label="Flipkart services">
+        <a class="brand-tab primary" href="/index.html" aria-label="Flipkart home">
+          <span class="flip-mark">f</span>
+          <span class="brand-stack"><span>Flipkart</span><small>Explore Plus</small></span>
         </a>
         <a class="brand-tab travel" href="/index.html#featured-products">
           <span class="travel-mark">Air</span>
@@ -689,7 +749,8 @@ function renderHeader() {
       </div>
       <nav class="header-actions" aria-label="Customer actions">
         ${isSignedIn() ? `<span class="signed-user" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button>` : `<a class="header-action login-action" href="/login.html"><span class="person-icon" aria-hidden="true"></span><span>Login</span><span class="chevron">v</span></a>`}
-        <button class="header-action" type="button"><span>More</span><span class="chevron">v</span></button>
+        <a class="header-action seller-action" href="#seller"><span class="seller-icon" aria-hidden="true"></span><span>Become a Seller</span></a>
+        <button class="header-action more-action" type="button"><span>More</span><span class="chevron">v</span></button>
         <a class="header-action cart-action" href="/user/cart.html"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
       </nav>
     </header>
@@ -756,6 +817,40 @@ function renderSpotlightCard([title, offer, image]) {
     </article>
   `;
 }
+
+function renderRailItem([title, offer, image]) {
+  return `
+    <a class="rail-item" href="#featured-products" aria-label="${escapeHtml(title)} ${escapeHtml(offer)}">
+      <img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(offer)}</span>
+    </a>
+  `;
+}
+
+function renderMarketplaceRail(rail, index) {
+  return `
+    <section class="market-rail ${rail.sideAd ? "with-ad" : ""}" aria-labelledby="railTitle${index}">
+      <div class="rail-heading">
+        <h2 id="railTitle${index}">${escapeHtml(rail.title)}</h2>
+        <a class="rail-more" href="#featured-products" aria-label="View all ${escapeHtml(rail.title)}">›</a>
+      </div>
+      <div class="rail-body">
+        <div class="rail-strip">
+          ${rail.items.map(renderRailItem).join("")}
+        </div>
+        ${rail.sideAd ? `
+          <aside class="rail-ad">
+            <img src="${escapeHtml(rail.sideAd.image)}" alt="${escapeHtml(rail.sideAd.title)}" loading="lazy">
+            <strong>${escapeHtml(rail.sideAd.title)}</strong>
+            <span>${escapeHtml(rail.sideAd.subtitle)}</span>
+          </aside>
+        ` : ""}
+      </div>
+    </section>
+  `;
+}
+
 function renderMarketProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
@@ -777,10 +872,10 @@ function renderMarketProductCard(product) {
 }
 function renderFaqItems() {
   const faqs = [
-    ["Can I browse without login?", "Yes. The home page and login page are public. Cart, order history and customer cache require a Supabase session."],
-    ["Where is cart data stored?", "Cart and order data are stored per signed-in user through the backend and Upstash Redis cache."],
-    ["Can I see my orders on another device?", "Yes. Sign in with the same Supabase account and the backend will load your user-scoped cart and orders from cache."],
-    ["Can I clear my customer cache?", "Yes. Open the customer cache page after login to warm or clear the cart and order cache for your account."]
+    ["Flipkart: India's Ultimate One-Stop Online Shopping Destination", "Browse mobiles, fashion, appliances, beauty, grocery, furniture and daily essentials from one responsive storefront."],
+    ["What Can You Buy from Flipkart?", "Shop latest gadgets, apparel, footwear, home decor, cookware, personal care, toys, books and more across curated category rails."],
+    ["How does this clone behave?", "The page mirrors the public storefront layout for desktop and mobile views while keeping the existing cart and account links wired to this demo app."],
+    ["Are these real Flipkart assets?", "This local front end recreates the layout and visual rhythm with replacement imagery and demo content instead of copying private production assets."]
   ];
   return faqs.map(([question, answer]) => `
     <details class="faq-item">
@@ -795,18 +890,21 @@ function renderHomePage() {
   return `
     ${renderHeader()}
     ${renderCategoryStrip()}
-    <main class="home-layout market-home">
-      <section class="promo-grid" aria-label="Featured offers">
-        ${promoTiles.map((tile) => `
-          <article class="promo-card ${escapeHtml(tile.tone)}">
-            <img src="${escapeHtml(tile.image)}" alt="${escapeHtml(tile.title)}" loading="lazy">
+    <main class="home-layout market-home flipkart-shell">
+      <section class="promo-grid flip-hero" aria-label="Featured offers">
+        <button class="hero-arrow prev" type="button" aria-label="Previous offer">&lsaquo;</button>
+        ${promoTiles.map((tile, index) => `
+          <article class="promo-card ${escapeHtml(tile.tone)} ${index === 0 ? "active" : ""}">
+            <img src="${escapeHtml(tile.image)}" alt="${escapeHtml(tile.title)}" loading="${index === 0 ? "eager" : "lazy"}">
             <div>
               <span>${escapeHtml(tile.badge)}</span>
-              <h2>${escapeHtml(tile.title)}</h2>
+              <h1>${escapeHtml(tile.title)}</h1>
               <p>${escapeHtml(tile.subtitle)}</p>
+              <b>${escapeHtml(tile.cta || "Shop Now")}</b>
             </div>
           </article>
         `).join("")}
+        <button class="hero-arrow next" type="button" aria-label="Next offer">&rsaquo;</button>
       </section>
       <div class="mobile-promo-dots" aria-hidden="true"><span></span><span class="active"></span><span></span></div>
 
@@ -815,27 +913,30 @@ function renderHomePage() {
       </section>
 
       <section class="mobile-spotlight" aria-labelledby="spotlightTitle">
-        <h2 id="spotlightTitle">Spotlight's on</h2>
+        <h2 id="spotlightTitle">Interesting finds</h2>
         <div class="spotlight-grid">
           ${spotlightItems.map(renderSpotlightCard).join("")}
         </div>
       </section>
 
-      <section class="trend-band" aria-labelledby="trendTitle">
-        <h2 id="trendTitle">Trends you may like</h2>
+      <section class="trend-band brand-spotlight" aria-labelledby="trendTitle">
+        <h2 id="trendTitle">Brands In Spotlight</h2>
         <div class="trend-strip">
-          ${trendItems.map(([label, image]) => `
+          ${trendItems.map(([label, offer, image]) => `
             <article class="trend-card">
               <img src="${escapeHtml(image)}" alt="${escapeHtml(label)}" loading="lazy">
               <strong>${escapeHtml(label)}</strong>
+              <span>${escapeHtml(offer)}</span>
             </article>
           `).join("")}
         </div>
       </section>
 
+      ${marketplaceRails.map(renderMarketplaceRail).join("")}
+
       <section id="featured-products" class="market-toolbar">
         <div>
-          <h2>Top picks for you</h2>
+          <h2>People also viewed</h2>
           <p>${escapeHtml(productCacheLabel())} - ${products.length} products showing</p>
         </div>
         <div class="toolbar-controls">
@@ -858,7 +959,7 @@ function renderHomePage() {
 
       <section class="market-faq" aria-labelledby="faqTitle">
         <div>
-          <h2 id="faqTitle">ScaleMart - Your go-to place for online shopping</h2>
+          <h2 id="faqTitle">Flipkart - Your go-to place for Online Shopping</h2>
         </div>
         <div class="faq-list">
           ${renderFaqItems()}
@@ -867,16 +968,16 @@ function renderHomePage() {
     </main>
     <footer class="market-footer">
       <div class="footer-columns">
-        <section><h3>About</h3><a>Contact Us</a><a>About Us</a><a>Careers</a><a>ScaleMart Stories</a></section>
+        <section><h3>About</h3><a>Contact Us</a><a>About Us</a><a>Careers</a><a>Flipkart Stories</a></section>
         <section><h3>Group Companies</h3><a>Myntra</a><a>Cleartrip</a><a>Shopsy</a></section>
         <section><h3>Help</h3><a>Payments</a><a>Shipping</a><a>Cancellation & Returns</a><a>FAQ</a></section>
         <section><h3>Consumer Policy</h3><a>Terms Of Use</a><a>Security</a><a>Privacy</a><a>Grievance Redressal</a></section>
-        <section><h3>Mail Us</h3><p>ScaleMart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
-        <section><h3>Registered Office Address</h3><p>ScaleMart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
+        <section><h3>Mail Us</h3><p>Flipkart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
+        <section><h3>Registered Office Address</h3><p>Flipkart Internet Private Limited, Bengaluru, Karnataka, India</p></section>
       </div>
-      <div class="footer-bottom"><span>Become a Seller</span><span>Advertise</span><span>Gift Cards</span><span>Help Center</span><strong>2007-2026 ScaleMart.com</strong></div>
+      <div class="footer-bottom"><span>Become a Seller</span><span>Advertise</span><span>Gift Cards</span><span>Help Center</span><strong>2007-2026 Flipkart.com</strong></div>
     </footer>
-    ${isSignedIn() ? renderBottomNav() : ""}
+    ${renderBottomNav()}
   `;
 }
 function renderCartItem(item) {
@@ -1281,7 +1382,7 @@ function renderLoginPage() {
       <section class="login-hero">
         <a class="brand-link login-brand" href="/index.html">
           <span class="brand-mark">S</span>
-          <span class="brand-text">ScaleMart</span>
+          <span class="brand-text">Flipkart</span>
         </a>
         <div>
           <p class="eyebrow">Online shopping</p>
