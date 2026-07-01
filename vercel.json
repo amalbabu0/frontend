@@ -19,6 +19,10 @@
       "destination": "/login/index.html"
     },
     {
+      "source": "/product",
+      "destination": "/product/index.html"
+    },
+    {
       "source": "/user/cart",
       "destination": "/user/cart/index.html"
     },

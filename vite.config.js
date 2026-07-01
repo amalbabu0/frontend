@@ -15,6 +15,7 @@ export default defineConfig({
         account: htmlEntry("./account/index.html"),
         publicCart: htmlEntry("./cart/index.html"),
         login: htmlEntry("./login/index.html"),
+        product: htmlEntry("./product/index.html"),
         userHome: htmlEntry("./user/index.html"),
         userCart: htmlEntry("./user/cart/index.html"),
         userOrders: htmlEntry("./user/orders/index.html"),

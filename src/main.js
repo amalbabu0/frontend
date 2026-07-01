@@ -5,7 +5,7 @@ const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
 const protectedPages = new Set(["cart", "orders", "cache", "user"]);
-const publicPages = new Set(["home", "categories", "account", "publicCart"]);
+const publicPages = new Set(["home", "categories", "account", "publicCart", "product"]);
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 
@@ -330,6 +330,36 @@ function productById(productId) {
   return state.products.find((product) => product.id === productId);
 }
 
+function productDetailHref(product) {
+  return `/product/?id=${encodeURIComponent(product.id)}`;
+}
+
+function stableProductSeed(product) {
+  return String(product?.id || product?.name || "zaki")
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+}
+
+function productDiscountPercent(product) {
+  return 55 + (stableProductSeed(product) % 35);
+}
+
+function productListPricePaise(product) {
+  const discount = productDiscountPercent(product);
+  return Math.max(product.pricePaise + 100, Math.round(product.pricePaise / (1 - discount / 100)));
+}
+
+function currentProduct() {
+  const productId = new URLSearchParams(window.location.search).get("id");
+  return productById(productId) || state.products[0] || null;
+}
+
+function relatedProducts(product, limit = 8) {
+  const sameCategory = state.products.filter((item) => item.id !== product?.id && item.category === product?.category);
+  const otherProducts = state.products.filter((item) => item.id !== product?.id && item.category !== product?.category);
+  return [...sameCategory, ...otherProducts].slice(0, limit);
+}
+
 function cartCount() {
   return state.cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 }
@@ -496,7 +526,7 @@ async function loadPageData() {
     return;
   }
 
-  if (page === "categories") {
+  if (page === "categories" || page === "product") {
     if (isSignedIn()) {
       await Promise.all([loadProducts(), loadCart(), loadCache()]);
       return;
@@ -865,7 +895,7 @@ function renderProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
     <article class="product-card">
-      <a class="product-media" href="/cart/" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+      <a class="product-media" href="${escapeHtml(productDetailHref(product))}" aria-label="View ${escapeHtml(product.name)}">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
       </a>
       <div class="product-info">
@@ -946,7 +976,7 @@ function renderMarketProductCard(product) {
   const inCart = state.cart.find((item) => item.productId === product.id);
   return `
     <article class="market-product-card">
-      <a class="market-product-media" href="/cart/" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">
+      <a class="market-product-media" href="${escapeHtml(productDetailHref(product))}" aria-label="View ${escapeHtml(product.name)}">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
       </a>
       <div class="market-product-copy">
@@ -1214,6 +1244,214 @@ function renderPublicCartPage() {
       </section>
     </main>
     ${renderBottomNav()}
+  `;
+}
+
+function renderProductTopbar() {
+  return `
+    <header class="product-topbar">
+      <a class="product-back" href="/" aria-label="Back to store">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      </a>
+      <label class="product-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+        <input data-filter="query" data-focus-key="product-search" type="search" value="${escapeHtml(state.filters.query)}" placeholder="Search for products">
+      </label>
+      <a class="product-cart-link" href="/cart/" aria-label="Open cart">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 5h2l1.6 10.3h10.7L20 8H7.1"/><circle cx="9" cy="20" r="1.4"/><circle cx="17.4" cy="20" r="1.4"/></svg>
+        ${cartCount() ? `<strong>${cartCount()}</strong>` : ""}
+      </a>
+    </header>
+  `;
+}
+
+function renderProductPrice(product) {
+  return `
+    <div class="product-detail-price">
+      <span>${productDiscountPercent(product)}%</span>
+      <s>${formatMoney(productListPricePaise(product))}</s>
+      <strong>${formatMoney(product.pricePaise)}</strong>
+    </div>
+  `;
+}
+
+function renderProductDelivery(product) {
+  return `
+    <section class="product-panel product-delivery">
+      <h2>Delivery details</h2>
+      <div class="delivery-stack">
+        <a class="delivery-row location" href="/account/">
+          <span class="delivery-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.2 6-11a6 6 0 0 0-12 0c0 5.8 6 11 6 11z"/><circle cx="12" cy="10" r="2"/></svg></span>
+          <strong>Location not set</strong>
+          <b>Select delivery location</b>
+        </a>
+        <div class="delivery-row">
+          <span class="delivery-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10v9H4z"/><path d="M14 10h3.5l2.5 3v3h-6z"/><circle cx="8" cy="18" r="1.5"/><circle cx="17" cy="18" r="1.5"/></svg></span>
+          <div>
+            <strong>Delivery by 8 Jul, Wed</strong>
+            <small>Order in 0h 33m 14s</small>
+          </div>
+        </div>
+        <div class="delivery-row">
+          <span class="delivery-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v10H4z"/><path d="M7 8V6h10v2"/><path d="M8 12h8"/></svg></span>
+          <div>
+            <strong>Fulfilled by zaki Global</strong>
+            <small>4.4 star | 5 months with zaki</small>
+            <a href="/categories/">See other sellers</a>
+          </div>
+        </div>
+      </div>
+      <div class="product-trust-row">
+        <span><b><svg viewBox="0 0 24 24"><path d="m8 8 8 8M16 8l-8 8"/><circle cx="12" cy="12" r="8"/></svg></b>No<br>returns</span>
+        <span><b><svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z"/><path d="M8 11h8M8 14h5"/></svg></b>Cash on<br>Delivery</span>
+        <span><b><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.3 2.8 7.8 7 10 4.2-2.2 7-5.7 7-10V6z"/><path d="m9 12 2 2 4-5"/></svg></b>zaki<br>Assured</span>
+      </div>
+    </section>
+  `;
+}
+
+function renderProductMiniCard(product, index = 0) {
+  return `
+    <a class="product-mini-card" href="${escapeHtml(productDetailHref(product))}">
+      <span class="product-ad">AD</span>
+      <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
+      <span class="mini-rating">${escapeHtml(product.rating)} star</span>
+      <strong>${escapeHtml(product.name)}</strong>
+      <b>${productDiscountPercent(product)}% OFF</b>
+      <small><s>${formatMoney(productListPricePaise(product))}</s> ${formatMoney(product.pricePaise)}</small>
+      <em>${index % 2 ? "Hot Deal" : `Get it by ${escapeHtml(product.delivery || "7 Jul")}`}</em>
+    </a>
+  `;
+}
+
+function renderProductRail(title, products) {
+  return `
+    <section class="product-panel product-rail-section">
+      <div class="product-section-heading">
+        <h2>${escapeHtml(title)}</h2>
+        <a href="/categories/" aria-label="View more ${escapeHtml(title)}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+      </div>
+      <div class="product-mini-rail">
+        ${products.map(renderProductMiniCard).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderProductHighlights(product) {
+  const rows = [
+    ["Number of Contents in Sales Package", "Pack of 1"],
+    ["Color", product.badge || "Multicolor"],
+    ["Net Quantity", "1"],
+    ["Brand", "zaki"],
+    ["Brand Color", String(product.category || "Multicolor").toUpperCase()],
+    ["Model Name", product.name],
+    ["Quantity", "1 ml"],
+    ["Suitable For", "Leather, Nylon, Synthetic Leather, Sports Shoes"]
+  ];
+  return `
+    <details class="product-accordion" open>
+      <summary>Product highlights</summary>
+      <div class="product-highlight-grid">
+        ${rows.map(([label, value]) => `
+          <div>
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+          </div>
+        `).join("")}
+      </div>
+    </details>
+  `;
+}
+
+function renderProductBoughtTogether(product, bundleProduct) {
+  return `
+    <details class="product-accordion product-bundle" open>
+      <summary>Frequently Bought Together</summary>
+      <article>
+        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}" loading="lazy">
+        <div>
+          <small>TRIBRAM + This product</small>
+          <strong>${escapeHtml(product.name)}</strong>
+          <span>${productDiscountPercent(product)}% ${formatMoney(product.pricePaise)}</span>
+        </div>
+        <b aria-hidden="true"></b>
+      </article>
+      ${bundleProduct ? `
+        <article>
+          <img src="${escapeHtml(bundleProduct.image)}" alt="${escapeHtml(bundleProduct.alt)}" loading="lazy">
+          <div>
+            <small>WIPSOR</small>
+            <strong>${escapeHtml(bundleProduct.name)}</strong>
+            <span>${formatMoney(bundleProduct.pricePaise)}</span>
+          </div>
+          <i aria-hidden="true"></i>
+        </article>
+      ` : ""}
+      <button type="button" disabled>Add 1 item to cart</button>
+    </details>
+  `;
+}
+
+function renderProductPage() {
+  const product = currentProduct();
+  const recommendations = product ? relatedProducts(product, 8) : [];
+  const recentlyViewed = state.products.filter((item) => item.id !== product?.id).slice().reverse().slice(0, 4);
+  const exploreProducts = [...recommendations].reverse().slice(0, 4);
+
+  if (!product) {
+    return `
+      <main class="product-page">
+        ${renderProductTopbar()}
+        <section class="product-empty">
+          <h1>Product not found</h1>
+          <a class="btn primary" href="/">Continue shopping</a>
+        </section>
+      </main>
+    `;
+  }
+
+  return `
+    <main class="product-page">
+      ${renderProductTopbar()}
+      <section class="product-hero-panel">
+        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.alt)}">
+        <div>
+          <span>${escapeHtml(product.channel || "zaki Assured")}</span>
+          <h1>${escapeHtml(product.name)}</h1>
+          <p>${escapeHtml(product.description || `${product.category} essentials with fast delivery`)}</p>
+          ${renderProductPrice(product)}
+        </div>
+      </section>
+      ${renderProductDelivery(product)}
+      ${renderProductRail("Similar Products", recommendations)}
+      ${renderProductHighlights(product)}
+      <details class="product-accordion">
+        <summary>All details</summary>
+        <p>Features, description and more for ${escapeHtml(product.name)}. SKU ${escapeHtml(product.sku)} ships through zaki marketplace fulfillment.</p>
+      </details>
+      <details class="product-accordion" open>
+        <summary>Ratings and reviews</summary>
+        <div class="product-rating-block"><strong>${escapeHtml(product.rating)} star</strong><span>Very Good</span><small>based on 7 ratings by Verified Buyers</small></div>
+      </details>
+      <details class="product-accordion">
+        <summary>Questions and Answers</summary>
+        <p>No questions and answers available</p>
+      </details>
+      ${renderProductBoughtTogether(product, recommendations[0])}
+      ${recentlyViewed.length ? renderProductRail("Recently Viewed", recentlyViewed) : ""}
+      <section class="product-panel explore-section">
+        <h2>Explore more like this</h2>
+        <div class="explore-chips"><span>Early Bird Deals</span><span>Top Rated</span></div>
+        <div class="product-mini-rail">${exploreProducts.map(renderProductMiniCard).join("")}</div>
+      </section>
+      <div class="product-action-bar">
+        <button class="product-add-action" type="button" data-action="add-to-cart" data-product-id="${escapeHtml(product.id)}" ${state.loading.action === product.id ? "disabled" : ""}>Add to cart</button>
+        <button class="product-buy-action" type="button" data-action="buy-now" data-product-id="${escapeHtml(product.id)}">Buy now</button>
+      </div>
+    </main>
   `;
 }
 
@@ -1835,6 +2073,8 @@ function render() {
     app.innerHTML = renderAccountPage();
   } else if (page === "publicCart") {
     app.innerHTML = renderPublicCartPage();
+  } else if (page === "product") {
+    app.innerHTML = renderProductPage();
   } else if (page === "owner") {
     window.location.href = "/user/";
   } else if (page === "admin") {
@@ -1943,7 +2183,7 @@ async function bootstrap() {
 
   if (!hasSupabaseConfig || !supabase) {
     state.authReady = true;
-    if (page === "home" || page === "categories") {
+    if (page === "home" || page === "categories" || page === "product") {
       await loadProducts();
     } else if (publicPages.has(page)) {
       render();
