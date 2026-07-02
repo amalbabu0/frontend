@@ -10,6 +10,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        splash: htmlEntry("./splash.html"),
         home: htmlEntry("./index.html"),
         categories: htmlEntry("./categories/index.html"),
         account: htmlEntry("./account/index.html"),

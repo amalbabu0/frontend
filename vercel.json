@@ -3,6 +3,10 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/splash",
+      "destination": "/splash.html"
+    },
+    {
       "source": "/account",
       "destination": "/account/index.html"
     },
