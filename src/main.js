@@ -602,6 +602,31 @@ function orderSummaryReturnPath() {
   return productId ? buyNowSummaryPath(productId) : "/cart/summary/";
 }
 
+function defaultBackFallback() {
+  if (page === "orderSummary") {
+    return "/cart/";
+  }
+  if (page === "payment") {
+    return "/cart/summary/";
+  }
+  if (page === "devices") {
+    return "/account/";
+  }
+  if (page === "account" || page === "cart" || page === "publicCart") {
+    return isSignedIn() ? "/user/" : "/";
+  }
+  return "/";
+}
+
+function navigateBack(fallback = defaultBackFallback()) {
+  const target = safeLocalPath(fallback, "/");
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+  window.location.href = target;
+}
+
 function stableProductSeed(product) {
   return String(product?.id || product?.name || "zaki")
     .split("")
@@ -1857,7 +1882,7 @@ function renderFaqItems() {
 function renderCategoryTopBar() {
   return `
     <header class="categories-topbar">
-      <a class="categories-icon-button" href="/" aria-label="Back to home">
+      <a class="categories-icon-button" href="/" data-action="app-back" data-fallback="/" aria-label="Go back">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/><path d="M9 12h11"/></svg>
       </a>
       <h1>All Categories</h1>
@@ -1965,10 +1990,10 @@ function renderCategoriesPage() {
   `;
 }
 
-function renderCloneBackBar(title) {
+function renderCloneBackBar(title, fallback = defaultBackFallback()) {
   return `
     <header class="clone-topbar">
-      <a class="clone-back-button" href="/" aria-label="Back to home">
+      <a class="clone-back-button" href="${escapeHtml(fallback)}" data-action="app-back" data-fallback="${escapeHtml(fallback)}" aria-label="Go back">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </a>
       <h1>${escapeHtml(title)}</h1>
@@ -2730,7 +2755,7 @@ function renderPublicCartPage() {
 function renderProductTopbar() {
   return `
     <header class="product-topbar">
-      <a class="product-back" href="/" aria-label="Back to store">
+      <a class="product-back" href="/" data-action="app-back" data-fallback="/" aria-label="Go back">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
       </a>
       <label class="product-search">
@@ -3627,6 +3652,11 @@ app.addEventListener("click", async (event) => {
   }
 
   const { action } = button.dataset;
+  if (action === "app-back") {
+    event.preventDefault();
+    navigateBack(button.dataset.fallback);
+    return;
+  }
   if (action === "auth-mode") {
     state.authMode = button.dataset.mode || "signin";
     state.loginView = "email";
