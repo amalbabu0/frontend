@@ -1687,7 +1687,7 @@ function renderHeader() {
       </div>
       <nav class="header-actions" aria-label="Customer actions">
         ${isSignedIn() ? `<span class="signed-user" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button>` : `<a class="header-action login-action" href="/login/"><span class="person-icon" aria-hidden="true"></span><span>Login</span><span class="chevron">v</span></a>`}
-        <a class="header-action seller-action" href="#seller"><span class="seller-icon" aria-hidden="true"></span><span>Become a Seller</span></a>
+        <a class="header-action seller-action" href="/seller/"><span class="seller-icon" aria-hidden="true"></span><span>Become a Seller</span></a>
         <button class="header-action more-action" type="button"><span>More</span><span class="chevron">v</span></button>
         <a class="header-action cart-action" href="/cart/"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
       </nav>
