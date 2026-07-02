@@ -167,51 +167,104 @@
     <div id="sellerModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Seller Account Created!</h2>
+          <h2>🎉 Seller Account Created!</h2>
           <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
+          <!-- Success Message -->
           <div class="seller-success-icon">✓</div>
-          <h3 style="text-align: center; margin-bottom: 20px;">Welcome to zaki Seller</h3>
+          <h3 style="text-align: center; margin-bottom: 8px; font-size: 1.2rem;">Welcome to zaki Seller Hub</h3>
+          <p style="text-align: center; color: var(--muted); margin-bottom: 24px; font-size: 0.9rem;">Your seller account has been successfully created!</p>
 
-          <div class="seller-info" id="sellerInfo">
-            <p><strong>Store Name:</strong> <span id="storeName"></span></p>
-            <p><strong>Category:</strong> <span id="category"></span></p>
-            <p><strong>Business Type:</strong> <span id="businessType"></span></p>
-            <p><strong>Status:</strong> <span id="status" style="color: #ff9800;">Pending Approval</span></p>
+          <!-- Store Info Card -->
+          <div style="background: linear-gradient(135deg, var(--blue) 0%, #0066cc 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="margin: 0 0 8px; opacity: 0.9; font-size: 0.85rem;">STORE NAME</p>
+            <h2 style="margin: 0 0 12px; font-size: 1.4rem;" id="storeNameBig"></h2>
+            <p style="margin: 0; font-size: 0.9rem;">
+              <span id="categoryBig"></span> • <span id="businessTypeBig"></span>
+            </p>
           </div>
 
+          <!-- Dashboard Stats -->
           <div class="seller-dashboard-stats">
             <div class="stat-card">
-              <strong>0</strong>
+              <strong id="productsCount">0</strong>
               <small>Products</small>
             </div>
             <div class="stat-card">
-              <strong>0</strong>
+              <strong id="ordersCount">0</strong>
               <small>Orders</small>
             </div>
             <div class="stat-card">
-              <strong>0</strong>
+              <strong id="revenueCount">₹0</strong>
               <small>Revenue</small>
             </div>
             <div class="stat-card">
-              <strong>4.5</strong>
+              <strong id="ratingCount">4.5</strong>
               <small>Rating</small>
             </div>
           </div>
 
-          <div class="next-steps">
-            <h4>📋 Next Steps:</h4>
-            <ol>
-              <li><strong>Account Verification:</strong> Our team will verify your details (24-48 hours)</li>
-              <li><strong>Access Your Dashboard:</strong> Once approved, manage your store</li>
-              <li><strong>Add Products:</strong> Start listing your products</li>
-              <li><strong>Process Orders:</strong> Manage customer orders and fulfillment</li>
+          <!-- Quick Action Buttons -->
+          <div style="margin-bottom: 20px;">
+            <p style="margin: 0 0 12px; font-weight: 900; font-size: 0.9rem;">Quick Actions:</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <button onclick="actionAddProduct()" style="background: var(--soft); border: 1px solid var(--line); padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 900; font-size: 0.85rem; text-align: center;">
+                📦 Add Product
+              </button>
+              <button onclick="actionViewOrders()" style="background: var(--soft); border: 1px solid var(--line); padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 900; font-size: 0.85rem; text-align: center;">
+                📋 View Orders
+              </button>
+            </div>
+          </div>
+
+          <!-- Account Status -->
+          <div style="background: #fff3cd; padding: 16px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+            <p style="margin: 0 0 8px; font-weight: 900; font-size: 0.9rem;">⏳ Account Status</p>
+            <p style="margin: 0; font-size: 0.85rem; color: #856404;">
+              <strong>Pending Approval</strong><br>
+              Our team is verifying your details. This usually takes 24-48 hours.
+            </p>
+          </div>
+
+          <!-- Store Details -->
+          <div style="background: var(--soft); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="margin: 0 0 12px; font-weight: 900; font-size: 0.9rem;">📍 Store Details</p>
+            <div style="display: grid; gap: 8px; font-size: 0.85rem;">
+              <div>
+                <span style="color: var(--muted);">Store Name:</span><br>
+                <strong id="storeNameDetail"></strong>
+              </div>
+              <div>
+                <span style="color: var(--muted);">Category:</span><br>
+                <strong id="categoryDetail"></strong>
+              </div>
+              <div>
+                <span style="color: var(--muted);">Business Type:</span><br>
+                <strong id="businessTypeDetail"></strong>
+              </div>
+              <div id="gstSection" style="display: none;">
+                <span style="color: var(--muted);">GST Number:</span><br>
+                <strong id="gstDetail"></strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Next Steps -->
+          <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="margin: 0 0 12px; font-weight: 900; font-size: 0.9rem;">📋 What's Next?</p>
+            <ol style="margin: 0; padding-left: 20px; font-size: 0.85rem; line-height: 1.6;">
+              <li>We're verifying your account (24-48 hours)</li>
+              <li>You'll receive approval email</li>
+              <li>Add your first product</li>
+              <li>Start selling & earning!</li>
             </ol>
           </div>
 
-          <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; font-size: 0.85rem; line-height: 1.5;">
-            <strong>💡 Tip:</strong> Check your email for a confirmation message. We'll notify you once your account is approved.
+          <!-- Important Note -->
+          <div style="background: #f0f0f0; padding: 12px; border-radius: 6px; font-size: 0.8rem; line-height: 1.5; text-align: center;">
+            <strong>✉️ Check your email</strong><br>
+            We've sent a confirmation message with next steps.
           </div>
         </div>
         <div class="modal-footer">
@@ -489,9 +542,28 @@
       }
 
       window.showSellerDashboard = function(seller) {
-        document.getElementById('storeName').textContent = escapeHtml(seller.store_name || '');
-        document.getElementById('category').textContent = escapeHtml(seller.category || '');
-        document.getElementById('businessType').textContent = escapeHtml(seller.business_type === 'individual' ? 'Individual' : 'Business');
+        // Main store info
+        document.getElementById('storeNameBig').textContent = escapeHtml(seller.store_name || 'My Store');
+        document.getElementById('categoryBig').textContent = escapeHtml(seller.category || 'Category');
+        document.getElementById('businessTypeBig').textContent = escapeHtml(seller.business_type === 'individual' ? 'Individual' : 'Business');
+
+        // Store details
+        document.getElementById('storeNameDetail').textContent = escapeHtml(seller.store_name || '');
+        document.getElementById('categoryDetail').textContent = escapeHtml(seller.category || '');
+        document.getElementById('businessTypeDetail').textContent = escapeHtml(seller.business_type === 'individual' ? 'Individual' : 'Business');
+
+        // Dashboard stats
+        document.getElementById('productsCount').textContent = seller.total_products || '0';
+        document.getElementById('ordersCount').textContent = seller.total_orders || '0';
+        document.getElementById('revenueCount').textContent = '₹' + (seller.total_revenue || '0');
+        document.getElementById('ratingCount').textContent = (seller.rating || '4.5').toFixed(1);
+
+        // GST if available
+        if (seller.gst_number) {
+          document.getElementById('gstSection').style.display = 'block';
+          document.getElementById('gstDetail').textContent = escapeHtml(seller.gst_number);
+        }
+
         document.getElementById('sellerModal').classList.add('active');
       };
 
@@ -505,6 +577,14 @@
 
       window.closeDashboard = function() {
         window.location.href = '/account/';
+      };
+
+      window.actionAddProduct = function() {
+        alert('📦 Add Products feature coming soon!\n\nYou will be able to add products once your seller account is approved.');
+      };
+
+      window.actionViewOrders = function() {
+        alert('📋 Your Orders\n\nOnce you start selling, all customer orders will appear here.');
       };
 
       async function checkAuth() {
