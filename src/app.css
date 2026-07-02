@@ -5443,28 +5443,47 @@ body[data-page="devices"] {
   display: block;
 }
 
-.filled-cart-qty-select {
+.filled-cart-qty-stepper {
   display: inline-grid;
-  grid-template-columns: auto 14px;
+  grid-template-columns: 28px auto 28px;
   align-items: center;
   min-height: 30px;
-  padding: 0 7px;
   border: 1px solid #d9dee8;
   border-radius: 3px;
   background: #ffffff;
   color: #111111;
   font-size: 0.76rem;
   font-weight: 500;
+  overflow: hidden;
 }
 
-.filled-cart-qty-select svg {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
+.filled-cart-qty-step {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  min-height: 30px;
+  border: 0;
+  background: #ffffff;
+  color: #2874f0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.filled-cart-qty-step:disabled {
+  color: #b8c0cc;
+  background: #f7f8fb;
+}
+
+.filled-cart-qty-value {
+  display: inline-grid;
+  place-items: center;
+  min-height: 30px;
+  min-width: 46px;
+  padding: 0 8px;
+  border-inline: 1px solid #eef1f5;
+  color: #111111;
+  white-space: nowrap;
 }
 
 .filled-cart-minimum {

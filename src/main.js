@@ -25,6 +25,7 @@ const state = {
   session: null,
   products: [],
   cart: [],
+  buyNowQuantity: 1,
   orders: [],
   cache: null,
   health: null,
@@ -726,7 +727,7 @@ function checkoutItems() {
   const productId = checkoutProductId();
   if (isBuyNowCheckout()) {
     const product = productById(productId);
-    return product ? [normalizeCartItem({ productId: product.id, quantity: 1 })] : [];
+    return product ? [normalizeCartItem({ productId: product.id, quantity: state.buyNowQuantity })] : [];
   }
 
   return state.cart;
@@ -1296,6 +1297,16 @@ async function updateQuantity(productId, direction) {
     state.loading.action = "";
     render();
   }
+}
+
+function updateBuyNowQuantity(productId, direction) {
+  clearMessage();
+  if (productId !== checkoutProductId()) {
+    return;
+  }
+
+  state.buyNowQuantity = Math.min(Math.max(Number(state.buyNowQuantity || 1) + direction, 1), 20);
+  render();
 }
 
 async function clearCart() {
@@ -2269,9 +2280,10 @@ function renderFilledCartItem(item, options = {}) {
   const unitListPrice = Math.max(productListPricePaise(product), Number(item.pricePaise || product.pricePaise || 0));
   const unitPrice = Number(item.pricePaise || product.pricePaise || 0);
   const discount = unitListPrice ? Math.max(0, Math.round(((unitListPrice - unitPrice) / unitListPrice) * 100)) : productDiscountPercent(product);
-  const quantityAttrs = options.lockQuantity
-    ? `aria-disabled="true"`
-    : `data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="1" aria-label="Increase quantity for ${escapeHtml(item.name)}"`;
+  const quantityAction = options.quantityAction || "quantity";
+  const quantityButtonAttrs = (direction, label) => options.lockQuantity
+    ? "disabled"
+    : `data-action="${escapeHtml(quantityAction)}" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(direction)}" aria-label="${escapeHtml(label)}"`;
   return `
     <article class="filled-cart-item">
       <div class="filled-cart-badge">${escapeHtml(product.badge || "Early Bird Deal")}</div>
@@ -2296,10 +2308,11 @@ function renderFilledCartItem(item, options = {}) {
       </div>
       <div class="filled-cart-meta">
         <div class="filled-cart-qty" aria-label="Quantity for ${escapeHtml(item.name)}">
-          <button class="filled-cart-qty-select" type="button" ${quantityAttrs}>
-            <span>Qty: ${escapeHtml(quantity)}</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
-          </button>
+          <div class="filled-cart-qty-stepper">
+            <button class="filled-cart-qty-step" type="button" ${quantity <= 1 ? "disabled" : quantityButtonAttrs(-1, `Decrease quantity for ${item.name}`)}>-</button>
+            <span class="filled-cart-qty-value">Qty: ${escapeHtml(quantity)}</span>
+            <button class="filled-cart-qty-step" type="button" ${quantity >= 20 ? "disabled" : quantityButtonAttrs(1, `Increase quantity for ${item.name}`)}>+</button>
+          </div>
         </div>
         <p>Delivery by ${escapeHtml(product.delivery || "Wed Jul 8")}</p>
       </div>
@@ -2452,7 +2465,7 @@ function renderOrderSummaryPage() {
       ${showAddressForm ? renderOrderAddressForm(address) : renderCartDeliveryAddress(address)}
 
       <section class="filled-cart-list" aria-label="Order items">
-        ${items.map((item) => renderFilledCartItem(item, { lockQuantity: isBuyNowCheckout() })).join("")}
+        ${items.map((item) => renderFilledCartItem(item, { quantityAction: isBuyNowCheckout() ? "buy-now-quantity" : "quantity" })).join("")}
       </section>
 
       <section class="cart-price-card" aria-labelledby="summaryPriceDetailsTitle">
@@ -3648,6 +3661,9 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "quantity") {
     await updateQuantity(button.dataset.productId, Number(button.dataset.direction));
+  }
+  if (action === "buy-now-quantity") {
+    updateBuyNowQuantity(button.dataset.productId, Number(button.dataset.direction));
   }
   if (action === "clear-cart") {
     await clearCart();
