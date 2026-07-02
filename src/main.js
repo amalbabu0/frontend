@@ -31,7 +31,7 @@ const state = {
   productCache: null,
   deliveryAddress: null,
   devices: [],
-  paymentAddressEdit: new URLSearchParams(window.location.search).get("step") === "address",
+  paymentAddressEdit: new URLSearchParams(window.location.search).get("step") === "address" || new URLSearchParams(window.location.search).get("edit") === "address",
   message: "",
   messageType: "info",
   filters: {
@@ -570,10 +570,6 @@ function safeLocalPath(value, fallback = "/cart/summary/") {
     return value;
   }
   return fallback;
-}
-
-function paymentAddressHref(nextPath = "/cart/summary/") {
-  return `/payment/?step=address&next=${encodeURIComponent(nextPath)}`;
 }
 
 function paymentAddressReturnPath() {
@@ -1517,7 +1513,8 @@ async function continuePayment() {
 
   const address = savedPaymentAddress();
   if (!isPaymentAddressComplete(address)) {
-    window.location.href = paymentAddressHref("/cart/summary/");
+    state.paymentAddressEdit = true;
+    setMessage("Add a delivery address before payment.", "error");
     return;
   }
 
@@ -1549,8 +1546,9 @@ async function submitPaymentAddress(form) {
   const address = Object.fromEntries(formData.entries());
   await persistPaymentAddress(address);
 
-  if (state.paymentAddressEdit) {
-    window.location.href = paymentAddressReturnPath();
+  if (state.paymentAddressEdit || page === "orderSummary") {
+    state.paymentAddressEdit = false;
+    window.location.href = page === "orderSummary" ? "/cart/summary/" : paymentAddressReturnPath();
     return;
   }
 
@@ -2281,7 +2279,7 @@ function renderCartAddressStrip() {
   return `
     <section class="cart-address-strip">
       <span>From Saved Addresses</span>
-      <a href="${paymentAddressHref("/cart/")}">Enter Delivery Pincode</a>
+      <a href="/cart/summary/?edit=address">Enter Delivery Pincode</a>
     </section>
   `;
 }
@@ -2332,7 +2330,7 @@ function renderCartDeliveryAddress(address) {
           <strong>Add delivery address</strong>
           <p>Enter your address before continuing to payment.</p>
         </div>
-        <a href="${paymentAddressHref("/cart/summary/")}">Add</a>
+        <button type="button" data-action="edit-address">Add</button>
       </section>
     `;
   }
@@ -2346,14 +2344,51 @@ function renderCartDeliveryAddress(address) {
         <p>${escapeHtml(addressLine)}</p>
         <p>${escapeHtml(address.phone || "")}</p>
       </div>
-      <a href="${paymentAddressHref("/cart/summary/")}">Change</a>
+      <button type="button" data-action="edit-address">Change</button>
     </section>
+  `;
+}
+
+function renderOrderAddressForm(address) {
+  const hasAddress = isPaymentAddressComplete(address);
+  return `
+    <form class="payment-address-form order-address-form" data-form="payment-address">
+      <div class="order-address-form-heading">
+        <h2>${hasAddress ? "Change delivery address" : "Add delivery address"}</h2>
+        <p>${hasAddress ? "Update the saved delivery details for this order." : "Add delivery details before continuing to payment."}</p>
+      </div>
+      <label>Full name
+        <input name="fullName" data-focus-key="summary-payment-name" autocomplete="name" value="${escapeHtml(address.fullName || currentUserEmail().split("@")[0] || "")}" required>
+      </label>
+      <label>Phone number
+        <input name="phone" data-focus-key="summary-payment-phone" type="tel" autocomplete="tel" value="${escapeHtml(address.phone || "")}" required>
+      </label>
+      <label>Address
+        <textarea name="address" data-focus-key="summary-payment-address" autocomplete="street-address" required>${escapeHtml(address.address || "")}</textarea>
+      </label>
+      <div class="payment-form-grid">
+        <label>Pincode
+          <input name="pincode" data-focus-key="summary-payment-pincode" inputmode="numeric" autocomplete="postal-code" value="${escapeHtml(address.pincode || "")}" required>
+        </label>
+        <label>City
+          <input name="city" data-focus-key="summary-payment-city" autocomplete="address-level2" value="${escapeHtml(address.city || "")}" required>
+        </label>
+      </div>
+      <label>State
+        <input name="state" data-focus-key="summary-payment-state" autocomplete="address-level1" value="${escapeHtml(address.state || "")}" required>
+      </label>
+      <div class="order-address-form-actions">
+        ${hasAddress ? `<button class="secondary" type="button" data-action="cancel-address-edit">Cancel</button>` : ""}
+        <button type="submit">Save Address</button>
+      </div>
+    </form>
   `;
 }
 
 function renderOrderSummaryPage() {
   const summary = cartPriceSummary();
   const address = savedPaymentAddress();
+  const showAddressForm = state.paymentAddressEdit || !isPaymentAddressComplete(address);
   if (!state.cart.length) {
     return `
       <main class="clone-page public-cart-page order-summary-page">
@@ -2372,7 +2407,7 @@ function renderOrderSummaryPage() {
       ${renderCloneBackBar("Order Summary")}
       ${renderOrderSummaryProgress(address)}
       ${renderMessage()}
-      ${renderCartDeliveryAddress(address)}
+      ${showAddressForm ? renderOrderAddressForm(address) : renderCartDeliveryAddress(address)}
 
       <section class="filled-cart-list" aria-label="Order items">
         ${state.cart.map(renderFilledCartItem).join("")}
@@ -3581,6 +3616,16 @@ app.addEventListener("click", async (event) => {
   if (action === "go-payment") {
     goToPayment();
   }
+  if (action === "edit-address") {
+    state.paymentAddressEdit = true;
+    clearMessage();
+    render();
+  }
+  if (action === "cancel-address-edit") {
+    state.paymentAddressEdit = false;
+    clearMessage();
+    render();
+  }
   if (action === "continue-payment") {
     await continuePayment();
   }
@@ -3635,6 +3680,11 @@ async function bootstrap() {
 
   if (protectedPages.has(page) && !state.session) {
     window.location.href = `/login/?next=${encodeURIComponent(window.location.pathname)}`;
+    return;
+  }
+
+  if (page === "payment" && new URLSearchParams(window.location.search).get("step") === "address") {
+    window.location.href = "/cart/summary/?edit=address";
     return;
   }
 

@@ -5214,7 +5214,8 @@ body[data-page="devices"] {
   line-height: 1.55;
 }
 
-.order-address-card a {
+.order-address-card a,
+.order-address-card button {
   display: grid;
   min-width: 72px;
   min-height: 34px;
@@ -5225,6 +5226,59 @@ body[data-page="devices"] {
   color: #0b61ff;
   font-size: 0.72rem;
   font-weight: 500;
+}
+
+.order-address-form {
+  margin-top: 4px;
+  border-top: 1px solid #edf0f5;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.order-address-form-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.order-address-form-heading h2,
+.order-address-form-heading p {
+  margin: 0;
+}
+
+.order-address-form-heading h2 {
+  color: #111111;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.order-address-form-heading p {
+  color: #667085;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.order-address-form-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.order-address-form-actions button {
+  min-height: 40px;
+  border-radius: 4px;
+  background: #ffd21c;
+  color: #111111;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.order-address-form-actions button.secondary {
+  border: 1px solid #dfe5ee;
+  background: #ffffff;
+  color: #0b61ff;
+}
+
+.order-address-form-actions button:only-child {
+  grid-column: 1 / -1;
 }
 
 .cart-address-strip {
