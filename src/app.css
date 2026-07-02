@@ -6171,6 +6171,437 @@ body[data-page="payment"] {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+body[data-page="sellerRegister"],
+body[data-page="sellerHome"],
+body[data-page="sellerProducts"],
+body[data-page="sellerOrders"] {
+  background: #3f3449;
+  color: #111111;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.seller-page {
+  width: min(100%, 720px);
+  padding-bottom: 96px;
+  background: #f1f2f4;
+}
+
+.seller-intro,
+.seller-form,
+.seller-hero-card,
+.seller-review-card,
+.seller-metrics,
+.seller-actions,
+.seller-page-heading,
+.seller-empty,
+.seller-empty-list {
+  margin: 8px 12px 0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.seller-intro {
+  display: grid;
+  gap: 16px;
+  padding: 18px 16px;
+}
+
+.seller-intro div {
+  display: grid;
+  gap: 8px;
+}
+
+.seller-intro span,
+.seller-empty span,
+.seller-empty-list span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #2459dd;
+}
+
+.seller-intro svg,
+.seller-empty svg,
+.seller-empty-list svg,
+.seller-actions svg,
+.seller-nav-link svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.seller-intro h1,
+.seller-page-heading h1,
+.seller-empty h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.seller-intro p,
+.seller-page-heading p,
+.seller-empty p,
+.seller-empty-list p,
+.seller-review-card p {
+  margin: 0;
+  color: #667085;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.seller-intro ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: #111111;
+  font-size: 0.82rem;
+}
+
+.seller-form {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.seller-form label,
+.seller-choice-field {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  color: #111111;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.seller-form label small {
+  color: #667085;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.seller-form input,
+.seller-form select,
+.seller-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 1px solid #d7deea;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111111;
+  font: inherit;
+  font-weight: 500;
+}
+
+.seller-form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.seller-form input:focus,
+.seller-form select:focus,
+.seller-form textarea:focus {
+  border-color: #2874f0;
+  box-shadow: 0 0 0 2px rgba(40, 116, 240, 0.12);
+  outline: none;
+}
+
+.seller-choice-field {
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  border: 0;
+  padding: 0;
+}
+
+.seller-choice-field legend {
+  grid-column: 1 / -1;
+  padding: 0;
+}
+
+.seller-choice-field label,
+.seller-terms {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #d7deea;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.seller-choice-field input,
+.seller-terms input {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+}
+
+.seller-form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.seller-terms {
+  align-items: flex-start;
+  background: #f8fbff;
+  color: #344054;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.seller-form button,
+.seller-empty a,
+.seller-empty-list a,
+.seller-empty-list button {
+  display: grid;
+  min-height: 46px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: #ffd21c;
+  color: #111111;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.seller-form button:disabled,
+.seller-empty-list button:disabled {
+  background: #e2e6ed;
+  color: #8892a0;
+}
+
+.seller-hero-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  gap: 14px;
+  align-items: center;
+  padding: 18px 16px;
+  background: linear-gradient(135deg, #2874f0, #174ea6);
+  color: #ffffff;
+}
+
+.seller-hero-card h1,
+.seller-hero-card p {
+  margin: 0;
+}
+
+.seller-hero-card h1 {
+  margin-top: 8px;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.seller-hero-card p {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.seller-hero-card > strong {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.seller-status {
+  display: inline-grid;
+  min-height: 24px;
+  width: fit-content;
+  place-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.seller-status.active,
+.seller-status.approved {
+  background: #d9faed;
+  color: #087443;
+}
+
+.seller-status.rejected {
+  background: #ffe8e6;
+  color: #b42318;
+}
+
+.seller-review-card,
+.seller-page-heading,
+.seller-empty,
+.seller-empty-list {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.seller-review-card h2,
+.seller-empty-list h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.seller-review-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.seller-review-card dl div {
+  display: grid;
+  gap: 3px;
+  padding-top: 10px;
+  border-top: 1px solid #edf0f5;
+}
+
+.seller-review-card dt {
+  color: #667085;
+  font-size: 0.72rem;
+}
+
+.seller-review-card dd {
+  margin: 0;
+  color: #111111;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.seller-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.seller-metrics div {
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+  place-items: center;
+  border-right: 1px solid #edf0f5;
+}
+
+.seller-metrics div:last-child {
+  border-right: 0;
+}
+
+.seller-metrics strong {
+  color: #111111;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.seller-metrics span {
+  color: #667085;
+  font-size: 0.72rem;
+}
+
+.seller-actions {
+  display: grid;
+}
+
+.seller-actions a {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 62px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #edf0f5;
+  color: #111111;
+}
+
+.seller-actions a:last-child {
+  border-bottom: 0;
+}
+
+.seller-actions > a > svg {
+  color: #2459dd;
+}
+
+.seller-actions span {
+  display: grid;
+  gap: 4px;
+}
+
+.seller-actions strong {
+  color: #111111;
+  font-size: 0.88rem;
+}
+
+.seller-actions small {
+  color: #667085;
+  font-size: 0.74rem;
+}
+
+.seller-empty,
+.seller-empty-list {
+  justify-items: start;
+}
+
+.seller-bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(100%, 720px);
+  min-height: 62px;
+  margin: 0 auto;
+  border-top: 1px solid #e1e5eb;
+  background: #ffffff;
+}
+
+.seller-nav-link {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  color: #667085;
+  font-size: 0.68rem;
+}
+
+.seller-nav-link span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+}
+
+.seller-nav-link strong {
+  font-weight: 700;
+}
+
+.seller-nav-link.active {
+  color: #2459dd;
+}
+
+@media (min-width: 720px) {
+  .seller-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .payment-page {
   width: min(100%, 430px);
   min-height: 100dvh;

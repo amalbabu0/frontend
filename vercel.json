@@ -12,7 +12,23 @@
     },
     {
       "source": "/account/become-seller",
-      "destination": "/account/become-seller/index.html"
+      "destination": "/seller/register/index.html"
+    },
+    {
+      "source": "/seller",
+      "destination": "/seller/index.html"
+    },
+    {
+      "source": "/seller/register",
+      "destination": "/seller/register/index.html"
+    },
+    {
+      "source": "/seller/products",
+      "destination": "/seller/products/index.html"
+    },
+    {
+      "source": "/seller/orders",
+      "destination": "/seller/orders/index.html"
     },
     {
       "source": "/cart",
