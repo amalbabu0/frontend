@@ -5821,18 +5821,7 @@ body[data-page="account"] .clone-page {
   white-space: nowrap;
 }
 
-.signed-finance-section {
-  gap: 10px;
-  margin-top: 6px;
-  padding: 16px 0 4px;
-}
-
-.signed-finance-section h2,
 .recent-stores-section h2 {
-  padding: 0 14px;
-}
-
-.signed-finance-section .account-list-row {
   padding: 0 14px;
 }
 

@@ -1791,11 +1791,6 @@ function renderRecentlyViewedStore([title, image]) {
 }
 
 function renderSignedInAccountPage() {
-  const financeRows = [
-    ["card", "Pre-Approved Supermoney Credit Card", "1% cashback on UPI & Non-UPI | 100% Approval | Lifetime Free"],
-    ["card", "zaki EMI - Only For You!", "Unlock Rs1 lakh | No Cost EMI"],
-    ["document", "Apply Now for zaki SBI Credit Card", "5% Cashback | Rs750 zaki Gift Card & Rs500 Cleartrip Voucher"]
-  ];
   const signedAccountSettingsRows = [
     ["plus", "zaki Plus", ""],
     ["devices", "Manage Devices", ""],
@@ -1832,16 +1827,6 @@ function renderSignedInAccountPage() {
         ${renderSignedAccountTile("help", "Wishlist", "/categories/")}
         ${renderSignedAccountTile("document", "Coupons", "/categories/")}
         ${renderSignedAccountTile("bell", "Help Center", "/account/")}
-      </section>
-
-      <section class="account-section signed-finance-section">
-        <h2>Finance Options</h2>
-        ${financeRows.map(renderSignedAccountRow).join("")}
-      </section>
-
-      <section class="account-section signed-finance-section">
-        <h2>Finance On UPI</h2>
-        ${renderSignedAccountRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate zaki UPI and pay in 3 months"])}
       </section>
 
       <section class="account-section recent-stores-section">
@@ -1891,11 +1876,6 @@ function renderAccountPage() {
       <section class="account-login-strip">
         <span>Log in to get exclusive offers</span>
         <a href="/login/?next=${encodeURIComponent("/account/")}">Log In</a>
-      </section>
-
-      <section class="account-section">
-        <h2>Finance On UPI</h2>
-        ${renderAccountListRow(["card", "superCard | Buy Now Pay later in 3", "Enjoy 3% cashback | Activate zaki UPI and pay in 3 months"])}
       </section>
 
       <section class="account-section language-section">
