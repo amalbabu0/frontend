@@ -5486,23 +5486,6 @@ body[data-page="devices"] {
   white-space: nowrap;
 }
 
-.filled-cart-minimum {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 14px;
-  background: #fff8e5;
-  color: #111111;
-  font-size: 0.72rem;
-}
-
-.filled-cart-minimum a {
-  color: #0b61ff;
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
 .filled-cart-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

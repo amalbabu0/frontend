@@ -2317,10 +2317,6 @@ function renderFilledCartItem(item, options = {}) {
         </div>
         <p>Delivery by ${escapeHtml(product.delivery || "Wed Jul 8")}</p>
       </div>
-      <div class="filled-cart-minimum">
-        <span>Minimum Order Quantity: ${Math.max(3, quantity)}</span>
-        <a href="${escapeHtml(productDetailHref(product))}">Know more</a>
-      </div>
       <div class="filled-cart-actions">
         <button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Save for later</button>
         <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(-quantity)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"/><path d="M9 7V5h6v2"/><path d="M9 10v8M15 10v8"/><path d="M8 7l1 14h6l1-14"/></svg>Remove</button>
