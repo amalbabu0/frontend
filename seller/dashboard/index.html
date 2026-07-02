@@ -20,11 +20,21 @@
       import '/src/app.css';
 
       const app = document.querySelector('#app');
-      const sellerData = JSON.parse(localStorage.getItem('sellerRegistration') || '{}');
 
+      // Get seller data from localStorage
+      let sellerData = {};
+      try {
+        const stored = localStorage.getItem('sellerRegistration');
+        if (stored) {
+          sellerData = JSON.parse(stored);
+        }
+      } catch (error) {
+        console.error('Error reading seller data:', error);
+      }
+
+      // Redirect to registration if not registered
       if (!sellerData.email) {
         window.location.href = '/seller/';
-        throw new Error('Not registered');
       }
 
       const state = {
@@ -211,8 +221,15 @@
       };
 
       window.logout = function() {
-        localStorage.removeItem('sellerRegistration');
-        window.location.href = '/seller/';
+        if (confirm('Are you sure you want to logout?')) {
+          localStorage.removeItem('sellerRegistration');
+          window.location.href = '/';
+        }
+      };
+
+      // Make alert available
+      window.alert = window.alert || function(msg) {
+        console.log(msg);
       };
 
       renderPage();

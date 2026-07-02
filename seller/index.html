@@ -393,135 +393,151 @@
     </div>
 
     <script>
-      const form = document.getElementById('sellerForm');
+      // Wait for DOM to be ready
+      document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('sellerForm');
 
-      // Form validation
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearErrors();
-
-        const formData = new FormData(form);
-        const data = {
-          mobile: formData.get('mobile'),
-          email: formData.get('email'),
-          password: formData.get('password'),
-          confirmPassword: formData.get('confirmPassword'),
-          storeName: formData.get('storeName'),
-          category: formData.get('category'),
-          gstNumber: formData.get('gstNumber'),
-          agreeTerms: formData.get('agreeTerms')
-        };
-
-        // Validation
-        let isValid = true;
-
-        if (!data.mobile || !/^\d{10}$/.test(data.mobile)) {
-          showError('mobileError', 'Please enter a valid 10-digit mobile number');
-          isValid = false;
-        }
-
-        if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-          showError('emailError', 'Please enter a valid email');
-          isValid = false;
-        }
-
-        if (!data.password || data.password.length < 6) {
-          showError('passwordError', 'Password must be at least 6 characters');
-          isValid = false;
-        }
-
-        if (data.password !== data.confirmPassword) {
-          showError('confirmError', 'Passwords do not match');
-          isValid = false;
-        }
-
-        if (!data.storeName) {
-          showError('storeNameError', 'Store name is required');
-          isValid = false;
-        }
-
-        if (!data.category) {
-          showError('categoryError', 'Please select a category');
-          isValid = false;
-        }
-
-        if (!data.agreeTerms) {
-          showError('formError', 'Please agree to terms and conditions');
-          isValid = false;
-        }
-
-        if (!isValid) {
+        if (!form) {
+          console.error('Form not found');
           return;
         }
 
-        // Submit registration
-        try {
-          const button = form.querySelector('button[type="submit"]');
-          button.disabled = true;
-          button.textContent = 'Registering...';
+        // Form validation
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          clearErrors();
 
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          const formData = new FormData(form);
+          const data = {
+            mobile: formData.get('mobile'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            confirmPassword: formData.get('confirmPassword'),
+            storeName: formData.get('storeName'),
+            category: formData.get('category'),
+            gstNumber: formData.get('gstNumber'),
+            agreeTerms: formData.get('agreeTerms')
+          };
 
-          // Store seller data
-          localStorage.setItem('sellerRegistration', JSON.stringify(data));
+          // Validation
+          let isValid = true;
 
-          showSuccess('formSuccess', 'Registration successful! Redirecting...');
+          if (!data.mobile || !/^\d{10}$/.test(data.mobile)) {
+            showError('mobileError', 'Please enter a valid 10-digit mobile number');
+            isValid = false;
+          }
 
-          setTimeout(() => {
-            window.location.href = '/seller/dashboard/';
-          }, 1500);
+          if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+            showError('emailError', 'Please enter a valid email');
+            isValid = false;
+          }
 
-        } catch (error) {
-          showError('formError', 'Registration failed. Please try again.');
-        }
-      });
+          if (!data.password || data.password.length < 6) {
+            showError('passwordError', 'Password must be at least 6 characters');
+            isValid = false;
+          }
 
-      function sendOTP(e) {
-        e.preventDefault();
-        alert('OTP sent to your mobile/email. This is a demo - use any OTP.');
-      }
+          if (data.password !== data.confirmPassword) {
+            showError('confirmError', 'Passwords do not match');
+            isValid = false;
+          }
 
-      function showError(elementId, message) {
-        const element = document.getElementById(elementId);
-        if (element) {
-          element.textContent = message;
-        }
-      }
+          if (!data.storeName) {
+            showError('storeNameError', 'Store name is required');
+            isValid = false;
+          }
 
-      function showSuccess(elementId, message) {
-        const element = document.getElementById(elementId);
-        if (element) {
-          element.textContent = message;
-          element.style.color = '#16843a';
-        }
-      }
+          if (!data.category) {
+            showError('categoryError', 'Please select a category');
+            isValid = false;
+          }
 
-      function clearErrors() {
-        document.querySelectorAll('.error-message').forEach(el => {
-          el.textContent = '';
+          if (!data.agreeTerms) {
+            showError('formError', 'Please agree to terms and conditions');
+            isValid = false;
+          }
+
+          if (!isValid) {
+            return;
+          }
+
+          // Submit registration
+          try {
+            const button = form.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Registering...';
+
+            // Store seller data
+            localStorage.setItem('sellerRegistration', JSON.stringify(data));
+
+            showSuccess('formSuccess', 'Registration successful! Redirecting...');
+
+            setTimeout(() => {
+              window.location.href = '/seller/dashboard/';
+            }, 1500);
+
+          } catch (error) {
+            console.error('Registration error:', error);
+            showError('formError', 'Registration failed. Please try again.');
+          }
         });
-      }
 
-      // Update step indicators on form fill
-      form.addEventListener('change', () => {
-        const mobile = form.querySelector('[name="mobile"]').value;
-        const email = form.querySelector('[name="email"]').value;
-        const password = form.querySelector('[name="password"]').value;
-        const confirmPassword = form.querySelector('[name="confirmPassword"]').value;
-
-        if (mobile && email && password && confirmPassword) {
-          document.getElementById('step1').classList.add('completed');
-          document.getElementById('step1').textContent = '✓';
+        function sendOTP(e) {
+          e.preventDefault();
+          alert('OTP sent to your mobile/email. This is a demo.');
         }
 
-        const storeName = form.querySelector('[name="storeName"]').value;
-        const category = form.querySelector('[name="category"]').value;
-
-        if (storeName && category) {
-          document.getElementById('step2').classList.add('completed');
-          document.getElementById('step2').textContent = '✓';
+        function showError(elementId, message) {
+          const element = document.getElementById(elementId);
+          if (element) {
+            element.textContent = message;
+            element.style.color = '#b42318';
+          }
         }
+
+        function showSuccess(elementId, message) {
+          const element = document.getElementById(elementId);
+          if (element) {
+            element.textContent = message;
+            element.style.color = '#16843a';
+          }
+        }
+
+        function clearErrors() {
+          document.querySelectorAll('.error-message').forEach(el => {
+            el.textContent = '';
+          });
+        }
+
+        // Update step indicators on form fill
+        form.addEventListener('change', () => {
+          const mobile = form.querySelector('[name="mobile"]').value;
+          const email = form.querySelector('[name="email"]').value;
+          const password = form.querySelector('[name="password"]').value;
+          const confirmPassword = form.querySelector('[name="confirmPassword"]').value;
+
+          if (mobile && email && password && confirmPassword) {
+            const step1 = document.getElementById('step1');
+            if (step1) {
+              step1.classList.add('completed');
+              step1.textContent = '✓';
+            }
+          }
+
+          const storeName = form.querySelector('[name="storeName"]').value;
+          const category = form.querySelector('[name="category"]').value;
+
+          if (storeName && category) {
+            const step2 = document.getElementById('step2');
+            if (step2) {
+              step2.classList.add('completed');
+              step2.textContent = '✓';
+            }
+          }
+        });
+
+        // Make sendOTP available globally
+        window.sendOTP = sendOTP;
       });
     </script>
   </body>
