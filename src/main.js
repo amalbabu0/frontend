@@ -572,8 +572,33 @@ function safeLocalPath(value, fallback = "/cart/summary/") {
   return fallback;
 }
 
+function currentLocalPath() {
+  return safeLocalPath(`${window.location.pathname}${window.location.search}`, "/");
+}
+
 function paymentAddressReturnPath() {
   return safeLocalPath(new URLSearchParams(window.location.search).get("next"), "/cart/summary/");
+}
+
+function buyNowSummaryPath(productId) {
+  return `/cart/summary/?productId=${encodeURIComponent(productId)}`;
+}
+
+function checkoutProductId() {
+  return new URLSearchParams(window.location.search).get("productId") || "";
+}
+
+function isBuyNowCheckout() {
+  return page === "orderSummary" && Boolean(checkoutProductId());
+}
+
+function checkoutMode() {
+  return isBuyNowCheckout() ? "buyNow" : "cart";
+}
+
+function orderSummaryReturnPath() {
+  const productId = checkoutProductId();
+  return productId ? buyNowSummaryPath(productId) : "/cart/summary/";
 }
 
 function stableProductSeed(product) {
@@ -603,12 +628,12 @@ function relatedProducts(product, limit = 8) {
   return [...sameCategory, ...otherProducts].slice(0, limit);
 }
 
-function cartCount() {
-  return state.cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+function cartCount(items = state.cart) {
+  return items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 }
 
-function cartTotalPaise() {
-  return state.cart.reduce((sum, item) => sum + Number(item.lineTotalPaise || item.pricePaise * item.quantity || 0), 0);
+function cartTotalPaise(items = state.cart) {
+  return items.reduce((sum, item) => sum + Number(item.lineTotalPaise || item.pricePaise * item.quantity || 0), 0);
 }
 
 function orderTotalPaise() {
@@ -695,6 +720,16 @@ function normalizeCartItems(items = []) {
   return (Array.isArray(items) ? items : [])
     .filter((item) => item?.productId)
     .map(normalizeCartItem);
+}
+
+function checkoutItems() {
+  const productId = checkoutProductId();
+  if (isBuyNowCheckout()) {
+    const product = productById(productId);
+    return product ? [normalizeCartItem({ productId: product.id, quantity: 1 })] : [];
+  }
+
+  return state.cart;
 }
 
 function canUseCartDb() {
@@ -1210,28 +1245,19 @@ async function addToCart(productId, goToCart = false) {
 
 async function buyNow(productId) {
   clearMessage();
+  const product = productById(productId);
+  if (!product) {
+    setMessage("This product is not available right now.", "error");
+    return;
+  }
+
+  const targetPath = buyNowSummaryPath(product.id);
   if (!isSignedIn()) {
-    window.location.href = `/login/?next=${encodeURIComponent("/cart/summary/")}`;
+    window.location.href = `/login/?next=${encodeURIComponent(targetPath)}`;
     return;
   }
 
-  const preparedCart = cartWithAddedProduct(productId);
-  if (!preparedCart) {
-    return;
-  }
-
-  try {
-    state.loading.action = productId;
-    render();
-    await saveCart(preparedCart.nextCart);
-    window.location.href = `/cart/summary/?productId=${encodeURIComponent(productId)}`;
-  } catch (error) {
-    setMessage(error.message, "error");
-    await loadCart();
-  } finally {
-    state.loading.action = "";
-    render();
-  }
+  window.location.href = targetPath;
 }
 
 function goToPayment() {
@@ -1432,8 +1458,9 @@ function loadRazorpayCheckout() {
   return razorpayCheckoutPromise;
 }
 
-function createRazorpayOptions(orderData, address, resolve, reject) {
+function createRazorpayOptions(orderData, address, resolve, reject, items = state.cart, mode = "cart") {
   let settled = false;
+  const itemCount = cartCount(items);
   const finish = (callback) => {
     if (settled) {
       return;
@@ -1447,7 +1474,7 @@ function createRazorpayOptions(orderData, address, resolve, reject) {
     amount: orderData.order.amount,
     currency: orderData.order.currency || "INR",
     name: "zaki",
-    description: `${cartCount()} item${cartCount() === 1 ? "" : "s"} from your cart`,
+    description: `${itemCount} item${itemCount === 1 ? "" : "s"} ${mode === "buyNow" ? "for Buy Now" : "from your cart"}`,
     order_id: orderData.order.id,
     prefill: {
       name: address.fullName || currentUserName(),
@@ -1482,15 +1509,19 @@ function createRazorpayOptions(orderData, address, resolve, reject) {
   };
 }
 
-async function startRazorpayPayment(address) {
+async function startRazorpayPayment(address, items = state.cart, mode = "cart") {
   const orderData = await apiRequest("/api/payments/razorpay/order", {
     method: "POST",
-    body: JSON.stringify({ address })
+    body: JSON.stringify({
+      address,
+      checkoutMode: mode,
+      items: cartPayload(items)
+    })
   });
   await loadRazorpayCheckout();
 
   const data = await new Promise((resolve, reject) => {
-    const checkout = new window.Razorpay(createRazorpayOptions(orderData, address, resolve, reject));
+    const checkout = new window.Razorpay(createRazorpayOptions(orderData, address, resolve, reject, items, mode));
     checkout.on("payment.failed", (response) => {
       const description = response?.error?.description || response?.error?.reason || "Payment failed.";
       reject(new Error(description));
@@ -1498,15 +1529,19 @@ async function startRazorpayPayment(address) {
     checkout.open();
   });
 
-  state.cart = [];
-  writeCartToDb([]).catch(() => {});
+  if (mode === "cart") {
+    state.cart = [];
+    writeCartToDb([]).catch(() => {});
+  }
   state.orders = data.order ? [data.order, ...state.orders] : state.orders;
   window.location.href = "/user/orders/";
 }
 
 async function continuePayment() {
   clearMessage();
-  if (!state.cart.length) {
+  const items = checkoutItems();
+  const mode = checkoutMode();
+  if (!items.length) {
     setMessage("Add an item before continuing to payment.", "error");
     return;
   }
@@ -1521,9 +1556,12 @@ async function continuePayment() {
   state.loading.action = "payment";
   render();
   try {
-    state.cart = await writeCartToBackend(state.cart);
-    writeCartToDb(state.cart).catch(() => {});
-    await startRazorpayPayment(address);
+    const paymentItems = mode === "cart" ? await writeCartToBackend(state.cart) : normalizeCartItems(items);
+    if (mode === "cart") {
+      state.cart = paymentItems;
+      writeCartToDb(state.cart).catch(() => {});
+    }
+    await startRazorpayPayment(address, paymentItems, mode);
   } catch (error) {
     if (hasPaymentLinkFallback() && error.message.includes("Razorpay backend env vars are not configured")) {
       window.location.href = razorpayPaymentUrl;
@@ -1537,7 +1575,7 @@ async function continuePayment() {
 
 async function submitPaymentAddress(form) {
   clearMessage();
-  if (!state.cart.length) {
+  if (!checkoutItems().length) {
     setMessage("Add an item before continuing to payment.", "error");
     return;
   }
@@ -1548,7 +1586,7 @@ async function submitPaymentAddress(form) {
 
   if (state.paymentAddressEdit || page === "orderSummary") {
     state.paymentAddressEdit = false;
-    window.location.href = page === "orderSummary" ? "/cart/summary/" : paymentAddressReturnPath();
+    window.location.href = page === "orderSummary" ? orderSummaryReturnPath() : paymentAddressReturnPath();
     return;
   }
 
@@ -2214,23 +2252,26 @@ function cartItemListPricePaise(item) {
   return productListPricePaise(product) * Number(item.quantity || 1);
 }
 
-function cartPriceSummary() {
-  const pricePaise = state.cart.reduce((sum, item) => sum + cartItemListPricePaise(item), 0);
-  const sellingPaise = cartTotalPaise();
+function cartPriceSummary(items = state.cart) {
+  const pricePaise = items.reduce((sum, item) => sum + cartItemListPricePaise(item), 0);
+  const sellingPaise = cartTotalPaise(items);
   const discountPaise = Math.max(pricePaise - sellingPaise, 0);
-  const couponPaise = state.cart.length ? Math.min(1200, Math.max(0, Math.round(sellingPaise * 0.08))) : 0;
-  const platformFeePaise = state.cart.length ? 900 : 0;
+  const couponPaise = items.length ? Math.min(1200, Math.max(0, Math.round(sellingPaise * 0.08))) : 0;
+  const platformFeePaise = items.length ? 900 : 0;
   const totalPaise = Math.max(0, sellingPaise - couponPaise + platformFeePaise);
   const savedPaise = Math.max(0, pricePaise - totalPaise);
   return { pricePaise, sellingPaise, discountPaise, couponPaise, platformFeePaise, totalPaise, savedPaise };
 }
 
-function renderFilledCartItem(item) {
+function renderFilledCartItem(item, options = {}) {
   const product = cartProductForItem(item);
   const quantity = Number(item.quantity || 1);
   const unitListPrice = Math.max(productListPricePaise(product), Number(item.pricePaise || product.pricePaise || 0));
   const unitPrice = Number(item.pricePaise || product.pricePaise || 0);
   const discount = unitListPrice ? Math.max(0, Math.round(((unitListPrice - unitPrice) / unitListPrice) * 100)) : productDiscountPercent(product);
+  const quantityAttrs = options.lockQuantity
+    ? `aria-disabled="true"`
+    : `data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="1" aria-label="Increase quantity for ${escapeHtml(item.name)}"`;
   return `
     <article class="filled-cart-item">
       <div class="filled-cart-badge">${escapeHtml(product.badge || "Early Bird Deal")}</div>
@@ -2255,7 +2296,7 @@ function renderFilledCartItem(item) {
       </div>
       <div class="filled-cart-meta">
         <div class="filled-cart-qty" aria-label="Quantity for ${escapeHtml(item.name)}">
-          <button class="filled-cart-qty-select" type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="1" aria-label="Increase quantity for ${escapeHtml(item.name)}">
+          <button class="filled-cart-qty-select" type="button" ${quantityAttrs}>
             <span>Qty: ${escapeHtml(quantity)}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
           </button>
@@ -2269,7 +2310,7 @@ function renderFilledCartItem(item) {
       <div class="filled-cart-actions">
         <button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Save for later</button>
         <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(-quantity)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"/><path d="M9 7V5h6v2"/><path d="M9 10v8M15 10v8"/><path d="M8 7l1 14h6l1-14"/></svg>Remove</button>
-        <button type="button" data-action="go-payment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 4-6 9h5l-1 7 6-10h-5z"/></svg>Buy this now</button>
+        <button type="button" data-action="buy-now" data-product-id="${escapeHtml(item.productId)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 4-6 9h5l-1 7 6-10h-5z"/></svg>Buy this now</button>
       </div>
     </article>
   `;
@@ -2386,10 +2427,11 @@ function renderOrderAddressForm(address) {
 }
 
 function renderOrderSummaryPage() {
-  const summary = cartPriceSummary();
+  const items = checkoutItems();
+  const summary = cartPriceSummary(items);
   const address = savedPaymentAddress();
   const showAddressForm = state.paymentAddressEdit || !isPaymentAddressComplete(address);
-  if (!state.cart.length) {
+  if (!items.length) {
     return `
       <main class="clone-page public-cart-page order-summary-page">
         ${renderCloneBackBar("Order Summary")}
@@ -2410,7 +2452,7 @@ function renderOrderSummaryPage() {
       ${showAddressForm ? renderOrderAddressForm(address) : renderCartDeliveryAddress(address)}
 
       <section class="filled-cart-list" aria-label="Order items">
-        ${state.cart.map(renderFilledCartItem).join("")}
+        ${items.map((item) => renderFilledCartItem(item, { lockQuantity: isBuyNowCheckout() })).join("")}
       </section>
 
       <section class="cart-price-card" aria-labelledby="summaryPriceDetailsTitle">
@@ -3452,7 +3494,7 @@ function renderProtectedPrompt() {
       <section class="login-card solo">
         <p class="eyebrow">Session</p>
         <h1>Login required</h1>
-        <a class="btn primary wide" href="/login/?next=${encodeURIComponent(window.location.pathname)}">Go to login</a>
+        <a class="btn primary wide" href="/login/?next=${encodeURIComponent(currentLocalPath())}">Go to login</a>
       </section>
     </main>
   `;
@@ -3679,7 +3721,7 @@ async function bootstrap() {
   }
 
   if (protectedPages.has(page) && !state.session) {
-    window.location.href = `/login/?next=${encodeURIComponent(window.location.pathname)}`;
+    window.location.href = `/login/?next=${encodeURIComponent(currentLocalPath())}`;
     return;
   }
 
