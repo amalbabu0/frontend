@@ -11,6 +11,7 @@ const publicPages = new Set(["home", "categories", "account", "publicCart", "pro
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 const deliveryAddressLegacyKey = "zakiDeliveryAddress";
+const cartDbTable = "user_carts";
 
 const state = {
   authReady: false,
@@ -374,6 +375,10 @@ function currentUserEmail() {
   return state.session?.user?.email || "";
 }
 
+function currentUserId() {
+  return state.session?.user?.id || "";
+}
+
 function deliveryAddressStorageKey() {
   const userKey = state.session?.user?.id || currentUserEmail() || "guest";
   return `${deliveryAddressLegacyKey}:${encodeURIComponent(userKey)}`;
@@ -559,6 +564,82 @@ function cartPayload(items = state.cart) {
   }));
 }
 
+function normalizeCartItem(item) {
+  const product = productById(item?.productId);
+  const quantity = Math.min(Math.max(Number(item?.quantity || 1), 1), 20);
+  const pricePaise = Number(product?.pricePaise ?? item?.pricePaise ?? 0);
+  return {
+    productId: product?.id || item?.productId,
+    name: product?.name || item?.name || item?.productId || "Product",
+    pricePaise,
+    quantity,
+    lineTotalPaise: pricePaise * quantity
+  };
+}
+
+function normalizeCartItems(items = []) {
+  return (Array.isArray(items) ? items : [])
+    .filter((item) => item?.productId)
+    .map(normalizeCartItem);
+}
+
+function canUseCartDb() {
+  return Boolean(supabase && currentUserId());
+}
+
+async function readCartFromDb() {
+  if (!canUseCartDb()) {
+    return { ok: false, error: new Error("Supabase cart DB is not configured.") };
+  }
+
+  const { data, error } = await supabase
+    .from(cartDbTable)
+    .select("items")
+    .eq("user_id", currentUserId())
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error };
+  }
+
+  return {
+    ok: true,
+    exists: Boolean(data),
+    cart: normalizeCartItems(data?.items || [])
+  };
+}
+
+async function writeCartToDb(items) {
+  if (!canUseCartDb()) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from(cartDbTable)
+    .upsert({
+      user_id: currentUserId(),
+      items: normalizeCartItems(items),
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function readCartFromBackend() {
+  const data = await apiRequest("/api/cart");
+  return normalizeCartItems(data.cart || []);
+}
+
+async function writeCartToBackend(items) {
+  const data = await apiRequest("/api/cart", {
+    method: "PUT",
+    body: JSON.stringify({ items: cartPayload(items) })
+  });
+  return normalizeCartItems(data.cart || items);
+}
+
 async function loadProducts() {
   state.loading.products = true;
   render();
@@ -587,10 +668,25 @@ async function loadCart() {
   state.loading.cart = true;
   render();
   try {
-    const data = await apiRequest("/api/cart");
-    state.cart = data.cart || [];
+    const dbResult = await readCartFromDb();
+    if (dbResult.ok && dbResult.exists) {
+      state.cart = dbResult.cart;
+      writeCartToBackend(state.cart).catch(() => {});
+      return;
+    }
+
+    const backendCart = await readCartFromBackend();
+    state.cart = backendCart;
+    if (dbResult.ok && backendCart.length) {
+      writeCartToDb(backendCart).catch(() => {});
+    }
   } catch (error) {
-    setMessage(error.message, "error");
+    const dbResult = await readCartFromDb();
+    if (dbResult.ok) {
+      state.cart = dbResult.cart;
+    } else {
+      setMessage(error.message || dbResult.error?.message || "Could not load cart.", "error");
+    }
   } finally {
     state.loading.cart = false;
     render();
@@ -698,14 +794,28 @@ async function loadPageData() {
 }
 
 async function saveCart(nextCart) {
-  state.cart = nextCart;
+  state.cart = normalizeCartItems(nextCart);
   render();
-  const data = await apiRequest("/api/cart", {
-    method: "PUT",
-    body: JSON.stringify({ items: cartPayload(nextCart) })
-  });
-  state.cart = data.cart || nextCart;
-  await loadCache();
+  const errors = [];
+
+  try {
+    await writeCartToDb(state.cart);
+  } catch (error) {
+    errors.push(error);
+  }
+
+  try {
+    state.cart = await writeCartToBackend(state.cart);
+    writeCartToDb(state.cart).catch(() => {});
+    await loadCache();
+  } catch (error) {
+    errors.push(error);
+  }
+
+  if (errors.length >= 2 || (errors.length && !canUseCartDb())) {
+    throw errors[0];
+  }
+
   render();
 }
 
@@ -839,8 +949,24 @@ async function clearCart() {
   try {
     state.loading.action = "clear-cart";
     render();
-    const data = await apiRequest("/api/cart", { method: "DELETE" });
-    state.cart = data.cart || [];
+    const errors = [];
+    try {
+      await writeCartToDb([]);
+    } catch (error) {
+      errors.push(error);
+    }
+    try {
+      const data = await apiRequest("/api/cart", { method: "DELETE" });
+      state.cart = normalizeCartItems(data.cart || []);
+    } catch (error) {
+      errors.push(error);
+      state.cart = [];
+    }
+
+    if (errors.length >= 2 || (errors.length && !canUseCartDb())) {
+      throw errors[0];
+    }
+
     setMessage("Cart cleared.");
     await loadCache();
   } catch (error) {
@@ -866,6 +992,7 @@ async function submitOrder(status) {
       body: JSON.stringify({ items: cartPayload(), status })
     });
     state.cart = [];
+    writeCartToDb([]).catch(() => {});
     setMessage(`${data.order.id} saved as ${data.order.status}.`);
     await Promise.all([loadOrders(), loadCache()]);
     if (status === "success") {
@@ -1043,6 +1170,7 @@ async function startRazorpayPayment(address) {
   });
 
   state.cart = [];
+  writeCartToDb([]).catch(() => {});
   state.orders = data.order ? [data.order, ...state.orders] : state.orders;
   window.location.href = "/user/orders/";
 }
@@ -1064,6 +1192,8 @@ async function continuePayment() {
   state.loading.action = "payment";
   render();
   try {
+    state.cart = await writeCartToBackend(state.cart);
+    writeCartToDb(state.cart).catch(() => {});
     await startRazorpayPayment(address);
   } catch (error) {
     if (hasPaymentLinkFallback() && error.message.includes("Razorpay backend env vars are not configured")) {

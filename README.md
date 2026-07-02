@@ -44,6 +44,10 @@ VITE_RAZORPAY_PAYMENT_URL=https://rzp.io/rzp/optional-payment-link-fallback
 
 For Vercel production, set `VITE_API_BASE_URL` to the deployed backend URL. Razorpay key ID and key secret belong in the backend Vercel project; `VITE_RAZORPAY_PAYMENT_URL` is only an optional fallback payment link.
 
+## Supabase Tables
+
+Run `supabase/user_carts.sql` in the Supabase SQL editor to persist carts across devices for the same signed-in user.
+
 ## Run
 
 ```bash
