@@ -6,7 +6,7 @@ const razorpayPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL || "https:/
 const razorpayCheckoutScript = "https://checkout.razorpay.com/v1/checkout.js";
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["cart", "orderSummary", "orders", "cache", "user", "payment", "devices"]);
+const protectedPages = new Set(["cart", "orderSummary", "orders", "cache", "user", "payment", "devices", "sellerRegister", "sellerHome", "sellerProducts", "sellerOrders", "sellerAccount"]);
 const publicPages = new Set(["home", "categories", "account", "publicCart", "product"]);
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
@@ -15,6 +15,8 @@ const deviceStorageKey = "zakiDeviceId";
 const cartDbTable = "user_carts";
 const deliveryAddressDbTable = "user_delivery_addresses";
 const deviceDbTable = "user_devices";
+const sellerDbTable = "sellers";
+const sellerProductDbTable = "seller_products";
 
 const state = {
   authReady: false,
@@ -32,6 +34,8 @@ const state = {
   productCache: null,
   deliveryAddress: null,
   devices: [],
+  seller: null,
+  sellerProducts: [],
   paymentAddressEdit: new URLSearchParams(window.location.search).get("step") === "address" || new URLSearchParams(window.location.search).get("edit") === "address",
   message: "",
   messageType: "info",
@@ -49,6 +53,8 @@ const state = {
     cache: false,
     health: false,
     devices: false,
+    seller: false,
+    sellerProducts: false,
     action: ""
   }
 };
@@ -169,6 +175,18 @@ const starterProducts = [
     image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=80",
     alt: "Modern desk lamp glowing on a table"
   }
+];
+
+const sellerCategories = [
+  "Electronics",
+  "Fashion & Apparel",
+  "Home & Furniture",
+  "Grocery & Food",
+  "Beauty & Personal Care",
+  "Sports & Outdoors",
+  "Books & Media",
+  "Toys & Games",
+  "Other"
 ];
 
 const storefrontCategories = [
@@ -609,6 +627,12 @@ function defaultBackFallback() {
   if (page === "payment") {
     return "/cart/summary/";
   }
+  if (page === "sellerRegister" || page === "sellerHome") {
+    return "/account/";
+  }
+  if (page === "sellerProducts" || page === "sellerOrders" || page === "sellerAccount") {
+    return "/seller/";
+  }
   if (page === "devices") {
     return "/account/";
   }
@@ -616,6 +640,10 @@ function defaultBackFallback() {
     return isSignedIn() ? "/user/" : "/";
   }
   return "/";
+}
+
+function sellerEntryHref() {
+  return isSignedIn() ? "/seller/register/" : `/login/?next=${encodeURIComponent("/seller/register/")}`;
 }
 
 function navigateBack(fallback = defaultBackFallback()) {
@@ -885,6 +913,200 @@ async function markCurrentDeviceSignedOut() {
     .eq("device_id", currentDeviceId());
 }
 
+function canUseSellerDb() {
+  return Boolean(supabase && currentUserId());
+}
+
+function normalizeSeller(row = {}) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id || "",
+    userId: row.user_id || currentUserId(),
+    storeName: row.store_name || "",
+    businessType: row.business_type || "",
+    category: row.category || "",
+    gstNumber: row.gst_number || "",
+    description: row.description || "",
+    contactPhone: row.contact_phone || "",
+    pickupPincode: row.pickup_pincode || "",
+    pickupCity: row.pickup_city || "",
+    status: row.status || "pending",
+    commissionRate: Number(row.commission_rate || 5),
+    totalProducts: Number(row.total_products || 0),
+    totalOrders: Number(row.total_orders || 0),
+    totalRevenue: Number(row.total_revenue || 0),
+    rating: Number(row.rating || 0),
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || ""
+  };
+}
+
+function sellerDbPayload(formData) {
+  const gstNumber = String(formData.get("gstNumber") || "").trim().toUpperCase();
+  return {
+    user_id: currentUserId(),
+    store_name: String(formData.get("storeName") || "").trim(),
+    business_type: String(formData.get("businessType") || "").trim(),
+    category: String(formData.get("category") || "").trim(),
+    gst_number: gstNumber || null,
+    description: String(formData.get("description") || "").trim() || null,
+    contact_phone: String(formData.get("contactPhone") || "").trim(),
+    pickup_pincode: String(formData.get("pickupPincode") || "").trim(),
+    pickup_city: String(formData.get("pickupCity") || "").trim(),
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function readSellerFromDb() {
+  if (!canUseSellerDb()) {
+    return { ok: false, error: new Error("Supabase seller DB is not configured.") };
+  }
+
+  const { data, error } = await supabase
+    .from(sellerDbTable)
+    .select("*")
+    .eq("user_id", currentUserId())
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error };
+  }
+
+  return {
+    ok: true,
+    exists: Boolean(data),
+    seller: data ? normalizeSeller(data) : null
+  };
+}
+
+async function writeSellerToDb(formData) {
+  if (!canUseSellerDb()) {
+    throw new Error("Supabase seller DB is not configured.");
+  }
+
+  const { data, error } = await supabase
+    .from(sellerDbTable)
+    .upsert(sellerDbPayload(formData), { onConflict: "user_id" })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return normalizeSeller(data);
+}
+
+function canUseSellerProductDb() {
+  return Boolean(supabase && currentUserId() && state.seller?.id);
+}
+
+function normalizeSellerProduct(row = {}) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id || "",
+    sellerId: row.seller_id || "",
+    userId: row.user_id || currentUserId(),
+    name: row.name || "",
+    category: row.category || "",
+    pricePaise: Number(row.price_paise || 0),
+    stock: Number(row.stock || 0),
+    imageUrl: row.image_url || "",
+    description: row.description || "",
+    status: row.status || "draft",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || ""
+  };
+}
+
+function sellerProductDbPayload(formData) {
+  const priceRupees = Number(formData.get("price") || 0);
+  return {
+    seller_id: state.seller.id,
+    user_id: currentUserId(),
+    name: String(formData.get("name") || "").trim(),
+    category: String(formData.get("category") || "").trim(),
+    price_paise: Math.round(priceRupees * 100),
+    stock: Math.max(0, Number.parseInt(formData.get("stock") || "0", 10) || 0),
+    image_url: String(formData.get("imageUrl") || "").trim() || null,
+    description: String(formData.get("description") || "").trim() || null,
+    status: String(formData.get("status") || "draft").trim() || "draft",
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function readSellerProductsFromDb() {
+  if (!canUseSellerProductDb()) {
+    return { ok: false, error: new Error("Supabase seller product DB is not configured.") };
+  }
+
+  const { data, error } = await supabase
+    .from(sellerProductDbTable)
+    .select("*")
+    .eq("user_id", currentUserId())
+    .eq("seller_id", state.seller.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { ok: false, error };
+  }
+
+  return {
+    ok: true,
+    products: Array.isArray(data) ? data.map(normalizeSellerProduct).filter(Boolean) : []
+  };
+}
+
+async function writeSellerProductToDb(formData) {
+  if (!canUseSellerProductDb()) {
+    throw new Error("Supabase seller product DB is not configured.");
+  }
+
+  const { data, error } = await supabase
+    .from(sellerProductDbTable)
+    .insert(sellerProductDbPayload(formData))
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return normalizeSellerProduct(data);
+}
+
+async function syncSellerProductCount(totalProducts) {
+  if (!canUseSellerDb()) {
+    return;
+  }
+
+  await supabase
+    .from(sellerDbTable)
+    .update({ total_products: totalProducts, updated_at: new Date().toISOString() })
+    .eq("user_id", currentUserId());
+}
+
+async function sellerHomeForCurrentUser(fallback = "/user/") {
+  const result = await readSellerFromDb();
+  return result.ok && result.exists ? "/seller/" : fallback;
+}
+
+async function postLoginRedirectPath(requestedNext = "") {
+  const sellerPath = await sellerHomeForCurrentUser("");
+  if (sellerPath === "/seller/") {
+    const nextPath = requestedNext ? safeLocalPath(requestedNext, "/seller/") : "";
+    return nextPath === "/seller" || nextPath.startsWith("/seller/") ? nextPath : "/seller/";
+  }
+
+  return requestedNext ? safeLocalPath(requestedNext, "/user/") : "/user/";
+}
+
 function normalizePaymentAddress(address = {}) {
   return {
     fullName: String(address.fullName || address.full_name || "").trim(),
@@ -1116,6 +1338,60 @@ async function loadDevices() {
   }
 }
 
+async function loadSellerProfile() {
+  if (!isSignedIn()) {
+    state.seller = null;
+    state.sellerProducts = [];
+    return;
+  }
+
+  state.loading.seller = true;
+  render();
+  try {
+    const result = await readSellerFromDb();
+    if (!result.ok) {
+      throw result.error;
+    }
+    state.seller = result.seller;
+  } catch (error) {
+    state.seller = null;
+    if (page.startsWith("seller")) {
+      setMessage(error.message || "Could not load seller profile. Run the sellers SQL in Supabase first.", "error");
+    }
+  } finally {
+    state.loading.seller = false;
+    render();
+  }
+}
+
+async function loadSellerProducts() {
+  if (!state.seller) {
+    state.sellerProducts = [];
+    return;
+  }
+
+  state.loading.sellerProducts = true;
+  render();
+  try {
+    const result = await readSellerProductsFromDb();
+    if (!result.ok) {
+      throw result.error;
+    }
+    state.sellerProducts = result.products;
+    if (state.seller) {
+      state.seller.totalProducts = result.products.length;
+    }
+  } catch (error) {
+    state.sellerProducts = [];
+    if (page === "sellerProducts") {
+      setMessage(error.message || "Could not load seller products. Run the seller products SQL in Supabase first.", "error");
+    }
+  } finally {
+    state.loading.sellerProducts = false;
+    render();
+  }
+}
+
 async function loadHealth() {
   state.loading.health = true;
   render();
@@ -1173,6 +1449,20 @@ async function loadPageData() {
   }
   if (page === "devices") {
     await loadDevices();
+  }
+  if (page === "sellerRegister" || page === "sellerHome" || page === "sellerProducts" || page === "sellerOrders" || page === "sellerAccount") {
+    await loadSellerProfile();
+    if (page === "sellerRegister" && state.seller) {
+      window.location.href = "/seller/";
+      return;
+    }
+    if ((page === "sellerHome" || page === "sellerProducts" || page === "sellerOrders" || page === "sellerAccount") && !state.seller) {
+      window.location.href = "/seller/register/";
+      return;
+    }
+    if ((page === "sellerHome" || page === "sellerProducts") && state.seller) {
+      await loadSellerProducts();
+    }
   }
   if (page === "cache" || page === "user" || page === "owner" || page === "admin") {
     await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
@@ -1461,7 +1751,8 @@ async function submitAuth() {
     }
 
     await registerCurrentDevice();
-    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/";
+    const requestedNext = new URLSearchParams(window.location.search).get("next");
+    const nextUrl = await postLoginRedirectPath(requestedNext);
     window.location.href = nextUrl;
   } catch (error) {
     setMessage(error.message, "error");
@@ -1631,6 +1922,135 @@ async function submitPaymentAddress(form) {
   await continuePayment();
 }
 
+async function submitSellerRegistration(form) {
+  clearMessage();
+  const formData = new FormData(form);
+  const storeName = String(formData.get("storeName") || "").trim();
+  const businessType = String(formData.get("businessType") || "").trim();
+  const category = String(formData.get("category") || "").trim();
+  const contactPhone = String(formData.get("contactPhone") || "").trim();
+  const pickupPincode = String(formData.get("pickupPincode") || "").trim();
+  const pickupCity = String(formData.get("pickupCity") || "").trim();
+  const gstNumber = String(formData.get("gstNumber") || "").trim().toUpperCase();
+  const errors = [];
+
+  if (storeName.length < 3) {
+    errors.push("Store name must be at least 3 characters.");
+  }
+  if (!businessType) {
+    errors.push("Choose a business type.");
+  }
+  if (!category) {
+    errors.push("Choose a product category.");
+  }
+  if (!/^[6-9]\d{9}$/.test(contactPhone)) {
+    errors.push("Enter a valid 10 digit Indian phone number.");
+  }
+  if (!/^\d{6}$/.test(pickupPincode)) {
+    errors.push("Enter a valid 6 digit pickup pincode.");
+  }
+  if (pickupCity.length < 2) {
+    errors.push("Enter your pickup city.");
+  }
+  if (gstNumber && !/^[0-9A-Z]{15}$/.test(gstNumber)) {
+    errors.push("GST number must be 15 alphanumeric characters.");
+  }
+  if (!formData.get("agreeTerms")) {
+    errors.push("Accept the seller terms to continue.");
+  }
+
+  if (errors.length) {
+    setMessage(errors[0], "error");
+    return;
+  }
+
+  try {
+    state.loading.action = "seller-registration";
+    render();
+    state.seller = await writeSellerToDb(formData);
+    setMessage("Seller registration submitted successfully.");
+    window.location.href = "/seller/";
+  } catch (error) {
+    const message = error.message?.includes("contact_phone")
+      ? "Update your sellers SQL in Supabase, then submit again."
+      : error.message || "Could not submit seller registration.";
+    setMessage(message, "error");
+  } finally {
+    state.loading.action = "";
+    render();
+  }
+}
+
+async function submitSellerProduct(form) {
+  clearMessage();
+  if (!state.seller) {
+    setMessage("Create your seller profile before adding products.", "error");
+    return;
+  }
+
+  const formData = new FormData(form);
+  const name = String(formData.get("name") || "").trim();
+  const category = String(formData.get("category") || "").trim();
+  const price = Number(formData.get("price") || 0);
+  const stockValue = String(formData.get("stock") || "").trim();
+  const stock = Number.parseInt(stockValue || "0", 10);
+  const imageUrl = String(formData.get("imageUrl") || "").trim();
+  const status = String(formData.get("status") || "draft").trim();
+  const errors = [];
+
+  if (name.length < 3) {
+    errors.push("Product name must be at least 3 characters.");
+  }
+  if (!category) {
+    errors.push("Choose a product category.");
+  }
+  if (!Number.isFinite(price) || price <= 0) {
+    errors.push("Enter a valid product price.");
+  }
+  if (stockValue && (!Number.isInteger(stock) || stock < 0)) {
+    errors.push("Stock must be zero or more.");
+  }
+  if (imageUrl) {
+    try {
+      const parsedUrl = new URL(imageUrl);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        errors.push("Image URL must start with http or https.");
+      }
+    } catch {
+      errors.push("Enter a valid image URL.");
+    }
+  }
+  if (!["draft", "active", "paused"].includes(status)) {
+    errors.push("Choose a valid listing status.");
+  }
+
+  if (errors.length) {
+    setMessage(errors[0], "error");
+    return;
+  }
+
+  try {
+    state.loading.action = "seller-product";
+    render();
+    const product = await writeSellerProductToDb(formData);
+    state.sellerProducts = [product, ...state.sellerProducts];
+    if (state.seller) {
+      state.seller.totalProducts = state.sellerProducts.length;
+    }
+    await syncSellerProductCount(state.sellerProducts.length).catch(() => {});
+    form.reset();
+    setMessage("Product added successfully.");
+  } catch (error) {
+    const message = error.message?.includes(sellerProductDbTable)
+      ? "Run the seller products SQL in Supabase, then add the product again."
+      : error.message || "Could not add product.";
+    setMessage(message, "error");
+  } finally {
+    state.loading.action = "";
+    render();
+  }
+}
+
 async function signOut() {
   if (supabase) {
     await markCurrentDeviceSignedOut().catch(() => {});
@@ -1643,6 +2063,8 @@ async function signOut() {
   state.health = null;
   state.deliveryAddress = null;
   state.devices = [];
+  state.seller = null;
+  state.sellerProducts = [];
   window.location.href = "/login/";
 }
 
@@ -1743,7 +2165,7 @@ function renderHeader() {
       </div>
       <nav class="header-actions" aria-label="Customer actions">
         ${isSignedIn() ? `<span class="signed-user" title="${escapeHtml(currentUserEmail())}">${escapeHtml(currentUserEmail())}</span><button class="logout-button" type="button" data-action="sign-out">Logout</button>` : `<a class="header-action login-action" href="/login/"><span class="person-icon" aria-hidden="true"></span><span>Login</span><span class="chevron">v</span></a>`}
-        <a class="header-action seller-action" href="#seller"><span class="seller-icon" aria-hidden="true"></span><span>Become a Seller</span></a>
+        <a class="header-action seller-action" href="${sellerEntryHref()}"><span class="seller-icon" aria-hidden="true"></span><span>Become a Seller</span></a>
         <button class="header-action more-action" type="button"><span>More</span><span class="chevron">v</span></button>
         <a class="header-action cart-action" href="/cart/"><span class="cart-icon" aria-hidden="true"></span><span>Cart</span>${cartCount() ? `<strong>${cartCount()}</strong>` : ""}</a>
       </nav>
@@ -2022,9 +2444,9 @@ function renderAccountIcon(icon) {
   return icons[icon] || icons.question;
 }
 
-function renderAccountListRow([icon, title, subtitle, nextUrl = "/account/"]) {
+function renderAccountListRow([icon, title, subtitle, href = `/login/?next=${encodeURIComponent("/account/")}`]) {
   return `
-    <a class="account-list-row" href="/login/?next=${encodeURIComponent(nextUrl)}">
+    <a class="account-list-row" href="${escapeHtml(href)}">
       <span class="account-row-icon">${renderAccountIcon(icon)}</span>
       <span>
         <strong>${escapeHtml(title)}</strong>
@@ -2192,7 +2614,7 @@ function renderSignedInAccountPage() {
 
       <section class="account-section signed-settings-section">
         <h2>Earn with zaki</h2>
-        ${renderSignedAccountRow(["shop", "Sell on zaki", "", "/account/become-seller/"])}
+        ${renderSignedAccountRow(["shop", "Sell on zaki", "Register or open your seller store", "/seller/register/"])}
       </section>
 
       <section class="account-section signed-settings-section">
@@ -2240,7 +2662,7 @@ function renderAccountPage() {
 
       <section class="account-section">
         <h2>Earn with zaki</h2>
-        ${renderAccountListRow(["shop", "Sell on zaki", "", "/account/become-seller/"])}
+        ${renderAccountListRow(["shop", "Sell on zaki", "", `/login/?next=${encodeURIComponent("/seller/register/")}`])}
       </section>
 
       <section class="account-section">
@@ -2249,6 +2671,401 @@ function renderAccountPage() {
       </section>
     </main>
     ${renderBottomNav()}
+  `;
+}
+
+function sellerStatusLabel(status = "pending") {
+  const labels = {
+    pending: "Pending approval",
+    approved: "Approved",
+    active: "Active",
+    rejected: "Needs changes"
+  };
+  return labels[status] || "Pending approval";
+}
+
+function sellerStatusText(status = "pending") {
+  if (status === "active" || status === "approved") {
+    return "Your store is ready for catalog setup and order management.";
+  }
+  if (status === "rejected") {
+    return "Review your details and contact support before resubmitting.";
+  }
+  return "Your seller application is under review. This usually takes 24 to 48 hours.";
+}
+
+function renderSellerBottomNav(active) {
+  const item = (href, icon, label, key) => `
+    <a class="seller-nav-link ${active === key ? "active" : ""}" href="${href}">
+      <span>${renderAccountIcon(icon)}</span>
+      <strong>${escapeHtml(label)}</strong>
+    </a>
+  `;
+  return `
+    <nav class="seller-bottom-nav" aria-label="Seller navigation">
+      ${item("/seller/", "shop", "Home", "home")}
+      ${item("/seller/products/", "document", "Products", "products")}
+      ${item("/seller/orders/", "chat", "Orders", "orders")}
+      ${item("/seller/account/", "user", "Account", "account")}
+    </nav>
+  `;
+}
+
+function renderSellerEmpty(title, copy, actionHref = "/seller/register/", actionLabel = "Register as seller") {
+  return `
+    <main class="clone-page seller-page">
+      ${renderCloneBackBar("Seller Hub", "/account/")}
+      ${renderMessage()}
+      <section class="seller-empty">
+        <span>${renderAccountIcon("shop")}</span>
+        <h1>${escapeHtml(title)}</h1>
+        <p>${escapeHtml(copy)}</p>
+        <a href="${escapeHtml(actionHref)}">${escapeHtml(actionLabel)}</a>
+      </section>
+    </main>
+  `;
+}
+
+function renderSellerRegisterPage() {
+  if (state.loading.seller) {
+    return renderBoot();
+  }
+  if (state.seller) {
+    return renderSellerEmpty("Seller profile already exists", "Open your seller home to manage this store.", "/seller/", "Open seller home");
+  }
+
+  return `
+    <main class="clone-page seller-page seller-register-page">
+      ${renderCloneBackBar("Seller Registration", "/account/")}
+      ${renderMessage()}
+
+      <section class="seller-intro">
+        <div>
+          <span>${renderAccountIcon("shop")}</span>
+          <h1>Start selling on zaki</h1>
+          <p>Complete these business details so your seller profile can be verified.</p>
+        </div>
+        <ol>
+          <li>Submit seller details</li>
+          <li>Verification in 24 to 48 hours</li>
+          <li>Prepare products from seller home</li>
+        </ol>
+      </section>
+
+      <form class="seller-form" data-form="seller-registration">
+        <label>Store name
+          <input name="storeName" data-focus-key="seller-store-name" autocomplete="organization" placeholder="Example: Babu Traders" required>
+        </label>
+
+        <fieldset class="seller-choice-field">
+          <legend>Business type</legend>
+          <label><input type="radio" name="businessType" value="individual" required> Individual</label>
+          <label><input type="radio" name="businessType" value="business"> Registered business</label>
+        </fieldset>
+
+        <label>Primary category
+          <select name="category" data-focus-key="seller-category" required>
+            <option value="">Select category</option>
+            ${sellerCategories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("")}
+          </select>
+        </label>
+
+        <div class="seller-form-grid">
+          <label>Contact phone
+            <input name="contactPhone" data-focus-key="seller-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10 digit mobile number" required>
+          </label>
+          <label>Pickup pincode
+            <input name="pickupPincode" data-focus-key="seller-pincode" inputmode="numeric" autocomplete="postal-code" placeholder="6 digit pincode" required>
+          </label>
+        </div>
+
+        <label>Pickup city
+          <input name="pickupCity" data-focus-key="seller-city" autocomplete="address-level2" placeholder="City for pickup operations" required>
+        </label>
+
+        <label>GST number <small>Optional</small>
+          <input name="gstNumber" data-focus-key="seller-gst" maxlength="15" placeholder="15 character GSTIN">
+        </label>
+
+        <label>Business description <small>Optional</small>
+          <textarea name="description" data-focus-key="seller-description" rows="4" placeholder="What do you sell and where do you source products from?"></textarea>
+        </label>
+
+        <label class="seller-terms">
+          <input type="checkbox" name="agreeTerms" required>
+          <span>I confirm these details are correct and agree to seller verification before listing products.</span>
+        </label>
+
+        <button type="submit" ${state.loading.action === "seller-registration" ? "disabled" : ""}>
+          ${state.loading.action === "seller-registration" ? "Submitting..." : "Submit seller application"}
+        </button>
+      </form>
+    </main>
+  `;
+}
+
+function renderSellerHomePage() {
+  if (state.loading.seller) {
+    return renderBoot();
+  }
+  if (!state.seller) {
+    return renderSellerEmpty("Register to sell on zaki", "Create a seller profile before opening the seller home.");
+  }
+
+  const seller = state.seller;
+  return `
+    <main class="clone-page seller-page seller-home-page">
+      ${renderCloneBackBar("Seller Home", "/account/")}
+      ${renderMessage()}
+
+      <section class="seller-hero-card">
+        <div>
+          <span class="seller-status ${escapeHtml(seller.status)}">${escapeHtml(sellerStatusLabel(seller.status))}</span>
+          <h1>${escapeHtml(seller.storeName)}</h1>
+          <p>${escapeHtml(seller.category)} store by ${escapeHtml(seller.businessType === "business" ? "Registered business" : "Individual seller")}</p>
+        </div>
+        <strong>${escapeHtml(String(Math.max(0, seller.rating || 0).toFixed(1)))}</strong>
+      </section>
+
+      <section class="seller-review-card">
+        <h2>Verification status</h2>
+        <p>${escapeHtml(sellerStatusText(seller.status))}</p>
+        <dl>
+          <div><dt>Pickup city</dt><dd>${escapeHtml(seller.pickupCity || "Not set")}</dd></div>
+          <div><dt>Pickup pincode</dt><dd>${escapeHtml(seller.pickupPincode || "Not set")}</dd></div>
+          <div><dt>Contact</dt><dd>${escapeHtml(seller.contactPhone || currentUserEmail())}</dd></div>
+        </dl>
+      </section>
+
+      <section class="seller-metrics" aria-label="Seller performance">
+        <div><strong>${escapeHtml(seller.totalProducts)}</strong><span>Products</span></div>
+        <div><strong>${escapeHtml(seller.totalOrders)}</strong><span>Orders</span></div>
+        <div><strong>${escapeHtml(moneyFormatter.format(seller.totalRevenue))}</strong><span>Revenue</span></div>
+      </section>
+
+      <section class="seller-actions">
+        <a href="/seller/products/">${renderAccountIcon("document")}<span><strong>Manage products</strong><small>Add and review product listings</small></span></a>
+        <a href="/seller/orders/">${renderAccountIcon("chat")}<span><strong>Seller orders</strong><small>Track customer orders</small></span></a>
+        <a href="/seller/account/">${renderAccountIcon("user")}<span><strong>Seller account</strong><small>Manage store and login details</small></span></a>
+      </section>
+    </main>
+    ${renderSellerBottomNav("home")}
+  `;
+}
+
+function sellerProductStatusLabel(status = "draft") {
+  if (status === "active") {
+    return "Live";
+  }
+  if (status === "paused") {
+    return "Paused";
+  }
+  return "Draft";
+}
+
+function renderSellerProductForm() {
+  return `
+    <form class="seller-form seller-product-form" data-form="seller-product">
+      <label>Product name
+        <input name="name" data-focus-key="seller-product-name" autocomplete="off" placeholder="Example: Disposable shoe wipes" required>
+      </label>
+
+      <div class="seller-form-grid">
+        <label>Category
+          <select name="category" data-focus-key="seller-product-category" required>
+            <option value="">Select category</option>
+            ${sellerCategories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Status
+          <select name="status" data-focus-key="seller-product-status">
+            <option value="draft">Draft</option>
+            <option value="active">Live</option>
+            <option value="paused">Paused</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="seller-form-grid">
+        <label>Selling price
+          <input name="price" data-focus-key="seller-product-price" type="number" min="1" step="0.01" inputmode="decimal" placeholder="138" required>
+        </label>
+        <label>Stock quantity
+          <input name="stock" data-focus-key="seller-product-stock" type="number" min="0" step="1" inputmode="numeric" placeholder="25" required>
+        </label>
+      </div>
+
+      <label>Product image URL <small>Optional</small>
+        <input name="imageUrl" data-focus-key="seller-product-image" type="url" placeholder="https://example.com/product.jpg">
+      </label>
+
+      <label>Description <small>Optional</small>
+        <textarea name="description" data-focus-key="seller-product-description" rows="4" placeholder="Short product details customers should know."></textarea>
+      </label>
+
+      <button type="submit" ${state.loading.action === "seller-product" ? "disabled" : ""}>
+        ${state.loading.action === "seller-product" ? "Adding..." : "Add product"}
+      </button>
+    </form>
+  `;
+}
+
+function renderSellerProductCard(product) {
+  const status = product.status || "draft";
+  const productInitial = (product.name || "P").trim().charAt(0).toUpperCase();
+  return `
+    <article class="seller-product-card">
+      <div class="seller-product-media">
+        ${product.imageUrl
+          ? `<img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}" loading="lazy">`
+          : `<span aria-hidden="true">${escapeHtml(productInitial)}</span>`}
+      </div>
+      <div class="seller-product-copy">
+        <div>
+          <strong>${escapeHtml(product.name)}</strong>
+          <span class="seller-product-status ${escapeHtml(status)}">${escapeHtml(sellerProductStatusLabel(status))}</span>
+        </div>
+        <p>${escapeHtml(product.description || product.category)}</p>
+        <dl>
+          <div><dt>Price</dt><dd>${formatMoney(product.pricePaise)}</dd></div>
+          <div><dt>Stock</dt><dd>${escapeHtml(product.stock)}</dd></div>
+          <div><dt>Category</dt><dd>${escapeHtml(product.category)}</dd></div>
+        </dl>
+      </div>
+    </article>
+  `;
+}
+
+function renderSellerProductList() {
+  if (state.loading.sellerProducts) {
+    return `
+      <section class="seller-empty-list">
+        <span>${renderAccountIcon("document")}</span>
+        <h2>Loading products</h2>
+        <p>Fetching your saved catalog.</p>
+      </section>
+    `;
+  }
+
+  if (!state.sellerProducts.length) {
+    return `
+      <section class="seller-empty-list">
+        <span>${renderAccountIcon("document")}</span>
+        <h2>No products listed yet</h2>
+        <p>Add your first product using the form above. Draft products stay private until you mark them live.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="seller-product-list" aria-labelledby="sellerProductListTitle">
+      <div class="seller-product-list-heading">
+        <h2 id="sellerProductListTitle">Current listings</h2>
+        <p>${escapeHtml(state.sellerProducts.length)} product${state.sellerProducts.length === 1 ? "" : "s"} saved</p>
+      </div>
+      ${state.sellerProducts.map(renderSellerProductCard).join("")}
+    </section>
+  `;
+}
+
+function renderSellerProductsPage() {
+  if (state.loading.seller) {
+    return renderBoot();
+  }
+  if (!state.seller) {
+    return renderSellerEmpty("Register before adding products", "Seller products are available after you create your seller profile.");
+  }
+
+  return `
+    <main class="clone-page seller-page seller-products-page">
+      ${renderCloneBackBar("Seller Products", "/seller/")}
+      ${renderMessage()}
+      <section class="seller-page-heading">
+        <h1>Products</h1>
+        <p>Add products for ${escapeHtml(state.seller.storeName)} and manage what appears in your catalog.</p>
+      </section>
+      ${renderSellerProductForm()}
+      ${renderSellerProductList()}
+    </main>
+    ${renderSellerBottomNav("products")}
+  `;
+}
+
+function renderSellerOrdersPage() {
+  if (state.loading.seller) {
+    return renderBoot();
+  }
+  if (!state.seller) {
+    return renderSellerEmpty("Register before viewing seller orders", "Seller orders are available after you create your seller profile.");
+  }
+
+  return `
+    <main class="clone-page seller-page seller-orders-page">
+      ${renderCloneBackBar("Seller Orders", "/seller/")}
+      ${renderMessage()}
+      <section class="seller-page-heading">
+        <h1>Orders</h1>
+        <p>Customer orders for ${escapeHtml(state.seller.storeName)} will show here.</p>
+      </section>
+      <section class="seller-empty-list">
+        <span>${renderAccountIcon("chat")}</span>
+        <h2>No seller orders yet</h2>
+        <p>Orders will appear once your products are live and customers start buying.</p>
+        <a href="/seller/products/">View products</a>
+      </section>
+    </main>
+    ${renderSellerBottomNav("orders")}
+  `;
+}
+
+function renderSellerAccountPage() {
+  if (state.loading.seller) {
+    return renderBoot();
+  }
+  if (!state.seller) {
+    return renderSellerEmpty("Register before opening seller account", "Seller account settings are available after you create your seller profile.");
+  }
+
+  const seller = state.seller;
+  return `
+    <main class="clone-page seller-page seller-account-page">
+      ${renderCloneBackBar("Seller Account", "/seller/")}
+      ${renderMessage()}
+
+      <section class="seller-hero-card seller-account-hero">
+        <div>
+          <span class="seller-status ${escapeHtml(seller.status)}">${escapeHtml(sellerStatusLabel(seller.status))}</span>
+          <h1>${escapeHtml(seller.storeName)}</h1>
+          <p>${escapeHtml(currentUserEmail())}</p>
+        </div>
+        <strong>${escapeHtml((seller.storeName || "Z").charAt(0).toUpperCase())}</strong>
+      </section>
+
+      <section class="seller-review-card">
+        <h2>Store profile</h2>
+        <p>${escapeHtml(seller.description || "Add products and manage orders from your seller pages.")}</p>
+        <dl>
+          <div><dt>Business type</dt><dd>${escapeHtml(seller.businessType === "business" ? "Registered business" : "Individual seller")}</dd></div>
+          <div><dt>Primary category</dt><dd>${escapeHtml(seller.category || "Not set")}</dd></div>
+          <div><dt>GST number</dt><dd>${escapeHtml(seller.gstNumber || "Not provided")}</dd></div>
+          <div><dt>Pickup city</dt><dd>${escapeHtml(seller.pickupCity || "Not set")}</dd></div>
+          <div><dt>Pickup pincode</dt><dd>${escapeHtml(seller.pickupPincode || "Not set")}</dd></div>
+          <div><dt>Contact phone</dt><dd>${escapeHtml(seller.contactPhone || "Not set")}</dd></div>
+        </dl>
+      </section>
+
+      <section class="seller-actions">
+        <a href="/seller/products/">${renderAccountIcon("document")}<span><strong>Products</strong><small>Add products and review your catalog</small></span></a>
+        <a href="/seller/orders/">${renderAccountIcon("chat")}<span><strong>Orders</strong><small>Check customer order activity</small></span></a>
+        <a href="/account/devices/">${renderAccountIcon("devices")}<span><strong>Manage devices</strong><small>View browsers where this login is active</small></span></a>
+        <a href="/account/">${renderAccountIcon("user")}<span><strong>Buyer account</strong><small>Open normal shopping account settings</small></span></a>
+      </section>
+
+      <section class="seller-signout-section" aria-label="Seller sign out">
+        <button type="button" data-action="sign-out">Log Out</button>
+      </section>
+    </main>
+    ${renderSellerBottomNav("account")}
   `;
 }
 
@@ -3590,6 +4407,16 @@ function render() {
     app.innerHTML = renderAccountPage();
   } else if (page === "devices") {
     app.innerHTML = renderDevicesPage();
+  } else if (page === "sellerRegister") {
+    app.innerHTML = renderSellerRegisterPage();
+  } else if (page === "sellerHome") {
+    app.innerHTML = renderSellerHomePage();
+  } else if (page === "sellerProducts") {
+    app.innerHTML = renderSellerProductsPage();
+  } else if (page === "sellerOrders") {
+    app.innerHTML = renderSellerOrdersPage();
+  } else if (page === "sellerAccount") {
+    app.innerHTML = renderSellerAccountPage();
   } else if (page === "publicCart") {
     app.innerHTML = renderPublicCartPage();
   } else if (page === "product") {
@@ -3619,6 +4446,12 @@ app.addEventListener("submit", async (event) => {
   }
   if (form.dataset.form === "payment-address") {
     await submitPaymentAddress(form);
+  }
+  if (form.dataset.form === "seller-registration") {
+    await submitSellerRegistration(form);
+  }
+  if (form.dataset.form === "seller-product") {
+    await submitSellerProduct(form);
   }
 });
 
@@ -3752,13 +4585,14 @@ async function bootstrap() {
   }
 
   if (page === "login" && state.session) {
-    const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/";
+    const requestedNext = new URLSearchParams(window.location.search).get("next");
+    const nextUrl = await postLoginRedirectPath(requestedNext);
     window.location.href = nextUrl;
     return;
   }
 
   if (page === "home" && state.session) {
-    window.location.href = "/user/";
+    window.location.href = await sellerHomeForCurrentUser("/user/");
     return;
   }
 
@@ -3786,7 +4620,7 @@ async function bootstrap() {
       return;
     }
     if (nextSession && page === "home") {
-      window.location.href = "/user/";
+      window.location.href = await sellerHomeForCurrentUser("/user/");
       return;
     }
     if (nextSession && page !== "login") {
