@@ -4871,6 +4871,7 @@ body[data-page="user"] .bottom-nav {
 body[data-page="account"],
 body[data-page="devices"],
 body[data-page="cart"],
+body[data-page="orderSummary"],
 body[data-page="publicCart"] {
   background: #f1f2f4;
   color: #111111;
@@ -4878,6 +4879,7 @@ body[data-page="publicCart"] {
 }
 
 body[data-page="cart"],
+body[data-page="orderSummary"],
 body[data-page="publicCart"] {
   background: #3f3449;
 }
@@ -5072,7 +5074,9 @@ body[data-page="devices"] {
 }
 
 .order-summary-page {
+  width: min(100%, 430px);
   min-height: 100dvh;
+  padding-bottom: 62px;
   background: #f1f2f4;
 }
 
@@ -5605,6 +5609,29 @@ body[data-page="devices"] {
   color: #111111;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.order-summary-page .filled-cart-list {
+  margin-top: 8px;
+}
+
+.order-summary-page .filled-cart-actions {
+  display: none;
+}
+
+.order-summary-page .cart-price-card {
+  margin-top: 8px;
+}
+
+.summary-order-bar {
+  bottom: 0;
+  z-index: 80;
+  min-height: 52px;
+  grid-template-columns: minmax(0, 1fr) 126px;
+}
+
+.summary-order-bar button {
+  min-height: 40px;
 }
 
 .cart-empty-panel {

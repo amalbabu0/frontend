@@ -15,6 +15,10 @@
       "destination": "/cart/index.html"
     },
     {
+      "source": "/cart/summary",
+      "destination": "/cart/summary/index.html"
+    },
+    {
       "source": "/categories",
       "destination": "/categories/index.html"
     },

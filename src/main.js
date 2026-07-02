@@ -6,7 +6,7 @@ const razorpayPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL || "https:/
 const razorpayCheckoutScript = "https://checkout.razorpay.com/v1/checkout.js";
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["cart", "orders", "cache", "user", "payment", "devices"]);
+const protectedPages = new Set(["cart", "orderSummary", "orders", "cache", "user", "payment", "devices"]);
 const publicPages = new Set(["home", "categories", "account", "publicCart", "product"]);
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
@@ -565,6 +565,21 @@ function productDetailHref(product) {
   return `/product/?id=${encodeURIComponent(product.id)}`;
 }
 
+function safeLocalPath(value, fallback = "/cart/summary/") {
+  if (value && value.startsWith("/") && !value.startsWith("//")) {
+    return value;
+  }
+  return fallback;
+}
+
+function paymentAddressHref(nextPath = "/cart/summary/") {
+  return `/payment/?step=address&next=${encodeURIComponent(nextPath)}`;
+}
+
+function paymentAddressReturnPath() {
+  return safeLocalPath(new URLSearchParams(window.location.search).get("next"), "/cart/summary/");
+}
+
 function stableProductSeed(product) {
   return String(product?.id || product?.name || "zaki")
     .split("")
@@ -1093,7 +1108,7 @@ async function loadPageData() {
     return;
   }
 
-  if (page === "cart" || page === "payment") {
+  if (page === "cart" || page === "orderSummary" || page === "payment") {
     await Promise.all([loadProducts(), loadCart(), loadPaymentAddress(), loadCache()]);
   }
   if (page === "orders") {
@@ -1200,7 +1215,7 @@ async function addToCart(productId, goToCart = false) {
 async function buyNow(productId) {
   clearMessage();
   if (!isSignedIn()) {
-    window.location.href = `/login/?next=${encodeURIComponent("/user/")}`;
+    window.location.href = `/login/?next=${encodeURIComponent("/cart/summary/")}`;
     return;
   }
 
@@ -1213,7 +1228,7 @@ async function buyNow(productId) {
     state.loading.action = productId;
     render();
     await saveCart(preparedCart.nextCart);
-    window.location.href = `/payment/?productId=${encodeURIComponent(productId)}`;
+    window.location.href = `/cart/summary/?productId=${encodeURIComponent(productId)}`;
   } catch (error) {
     setMessage(error.message, "error");
     await loadCart();
@@ -1226,14 +1241,14 @@ async function buyNow(productId) {
 function goToPayment() {
   clearMessage();
   if (!isSignedIn()) {
-    window.location.href = `/login/?next=${encodeURIComponent("/user/")}`;
+    window.location.href = `/login/?next=${encodeURIComponent("/cart/summary/")}`;
     return;
   }
   if (!state.cart.length) {
     setMessage("Add an item before continuing to payment.", "error");
     return;
   }
-  window.location.href = "/payment/";
+  window.location.href = "/cart/summary/";
 }
 
 async function updateQuantity(productId, direction) {
@@ -1502,8 +1517,7 @@ async function continuePayment() {
 
   const address = savedPaymentAddress();
   if (!isPaymentAddressComplete(address)) {
-    state.paymentAddressEdit = true;
-    setMessage("Add a delivery address before payment.", "error");
+    window.location.href = paymentAddressHref("/cart/summary/");
     return;
   }
 
@@ -1536,7 +1550,7 @@ async function submitPaymentAddress(form) {
   await persistPaymentAddress(address);
 
   if (state.paymentAddressEdit) {
-    window.location.href = "/cart/";
+    window.location.href = paymentAddressReturnPath();
     return;
   }
 
@@ -2267,7 +2281,7 @@ function renderCartAddressStrip() {
   return `
     <section class="cart-address-strip">
       <span>From Saved Addresses</span>
-      <a href="/payment/?step=address">Enter Delivery Pincode</a>
+      <a href="${paymentAddressHref("/cart/")}">Enter Delivery Pincode</a>
     </section>
   `;
 }
@@ -2318,7 +2332,7 @@ function renderCartDeliveryAddress(address) {
           <strong>Add delivery address</strong>
           <p>Enter your address before continuing to payment.</p>
         </div>
-        <a href="/payment/?step=address">Add</a>
+        <a href="${paymentAddressHref("/cart/summary/")}">Add</a>
       </section>
     `;
   }
@@ -2332,8 +2346,60 @@ function renderCartDeliveryAddress(address) {
         <p>${escapeHtml(addressLine)}</p>
         <p>${escapeHtml(address.phone || "")}</p>
       </div>
-      <a href="/payment/?step=address">Change</a>
+      <a href="${paymentAddressHref("/cart/summary/")}">Change</a>
     </section>
+  `;
+}
+
+function renderOrderSummaryPage() {
+  const summary = cartPriceSummary();
+  const address = savedPaymentAddress();
+  if (!state.cart.length) {
+    return `
+      <main class="clone-page public-cart-page order-summary-page">
+        ${renderCloneBackBar("Order Summary")}
+        <section class="payment-empty">
+          <h1>No item selected</h1>
+          <p>Add a product before reviewing your order.</p>
+          <a href="/">Continue shopping</a>
+        </section>
+      </main>
+    `;
+  }
+
+  return `
+    <main class="clone-page public-cart-page order-summary-page">
+      ${renderCloneBackBar("Order Summary")}
+      ${renderOrderSummaryProgress(address)}
+      ${renderMessage()}
+      ${renderCartDeliveryAddress(address)}
+
+      <section class="filled-cart-list" aria-label="Order items">
+        ${state.cart.map(renderFilledCartItem).join("")}
+      </section>
+
+      <section class="cart-price-card" aria-labelledby="summaryPriceDetailsTitle">
+        <h2 id="summaryPriceDetailsTitle">Price Details</h2>
+        <div class="cart-price-lines">
+          <div><span>MRP (incl. of all taxes)</span><strong>${formatMoney(summary.pricePaise)}</strong></div>
+          <div><span>Fees</span><strong>${formatMoney(summary.platformFeePaise)}</strong></div>
+          <div><span>Discounts</span><strong class="saving">${formatMoney(summary.discountPaise + summary.couponPaise)}</strong></div>
+        </div>
+        <div class="cart-price-total">
+          <span>Total Amount</span>
+          <strong>${formatMoney(summary.totalPaise)}</strong>
+        </div>
+        <p class="cart-save-note">You'll save ${formatMoney(summary.savedPaise)} on this order!</p>
+      </section>
+
+      <div class="cart-order-bar summary-order-bar">
+        <div>
+          <s>${formatMoney(summary.pricePaise)}</s>
+          <strong>${formatMoney(summary.totalPaise)}</strong>
+        </div>
+        <button type="button" data-action="continue-payment" ${state.loading.action === "payment" ? "disabled" : ""}>Continue</button>
+      </div>
+    </main>
   `;
 }
 
@@ -3397,6 +3463,8 @@ function render() {
     app.innerHTML = renderProtectedPrompt();
   } else if (page === "cart") {
     app.innerHTML = renderCartPage();
+  } else if (page === "orderSummary") {
+    app.innerHTML = renderOrderSummaryPage();
   } else if (page === "orders") {
     app.innerHTML = renderOrdersPage();
   } else if (page === "cache") {
