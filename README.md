@@ -50,6 +50,7 @@ Run these files in the Supabase SQL editor:
 
 - `supabase/user_carts.sql` persists carts across devices for the same signed-in user.
 - `supabase/user_delivery_addresses.sql` persists delivery address details across devices.
+- `supabase/user_devices.sql` shows active signed-in devices in Account > Manage Devices.
 
 ## Run
 

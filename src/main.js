@@ -6,13 +6,15 @@ const razorpayPaymentUrl = import.meta.env.VITE_RAZORPAY_PAYMENT_URL || "https:/
 const razorpayCheckoutScript = "https://checkout.razorpay.com/v1/checkout.js";
 const app = document.querySelector("#app");
 const page = document.body.dataset.page || "home";
-const protectedPages = new Set(["cart", "orders", "cache", "user", "payment"]);
+const protectedPages = new Set(["cart", "orders", "cache", "user", "payment", "devices"]);
 const publicPages = new Set(["home", "categories", "account", "publicCart", "product"]);
 const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 const deliveryAddressLegacyKey = "zakiDeliveryAddress";
+const deviceStorageKey = "zakiDeviceId";
 const cartDbTable = "user_carts";
 const deliveryAddressDbTable = "user_delivery_addresses";
+const deviceDbTable = "user_devices";
 
 const state = {
   authReady: false,
@@ -28,6 +30,7 @@ const state = {
   health: null,
   productCache: null,
   deliveryAddress: null,
+  devices: [],
   paymentAddressEdit: new URLSearchParams(window.location.search).get("step") === "address",
   message: "",
   messageType: "info",
@@ -44,6 +47,7 @@ const state = {
     orders: false,
     cache: false,
     health: false,
+    devices: false,
     action: ""
   }
 };
@@ -381,6 +385,103 @@ function currentUserId() {
   return state.session?.user?.id || "";
 }
 
+function createDeviceId() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  return `device-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function currentDeviceId() {
+  try {
+    const saved = localStorage.getItem(deviceStorageKey);
+    if (saved) {
+      return saved;
+    }
+    const nextDeviceId = createDeviceId();
+    localStorage.setItem(deviceStorageKey, nextDeviceId);
+    return nextDeviceId;
+  } catch {
+    try {
+      const saved = sessionStorage.getItem(deviceStorageKey);
+      if (saved) {
+        return saved;
+      }
+      const nextDeviceId = createDeviceId();
+      sessionStorage.setItem(deviceStorageKey, nextDeviceId);
+      return nextDeviceId;
+    } catch {
+      return "current-session";
+    }
+  }
+}
+
+function browserName(userAgent = navigator.userAgent) {
+  if (/Edg\//.test(userAgent)) {
+    return "Microsoft Edge";
+  }
+  if (/OPR\//.test(userAgent) || /Opera/.test(userAgent)) {
+    return "Opera";
+  }
+  if (/Chrome\//.test(userAgent) && !/Chromium/.test(userAgent)) {
+    return "Chrome";
+  }
+  if (/Firefox\//.test(userAgent)) {
+    return "Firefox";
+  }
+  if (/Safari\//.test(userAgent) && !/Chrome\//.test(userAgent)) {
+    return "Safari";
+  }
+  return "Browser";
+}
+
+function osName(userAgent = navigator.userAgent) {
+  if (/Windows/i.test(userAgent)) {
+    return "Windows";
+  }
+  if (/Android/i.test(userAgent)) {
+    return "Android";
+  }
+  if (/iPhone|iPad|iPod/i.test(userAgent)) {
+    return "iOS";
+  }
+  if (/Mac OS X|Macintosh/i.test(userAgent)) {
+    return "macOS";
+  }
+  if (/Linux/i.test(userAgent)) {
+    return "Linux";
+  }
+  return "Unknown OS";
+}
+
+function deviceType(userAgent = navigator.userAgent) {
+  if (/iPad|Tablet/i.test(userAgent)) {
+    return "Tablet";
+  }
+  if (/Mobi|Android|iPhone|iPod/i.test(userAgent)) {
+    return "Mobile";
+  }
+  return "Desktop";
+}
+
+function currentDevicePayload() {
+  const ua = navigator.userAgent || "";
+  const browser = browserName(ua);
+  const os = osName(ua);
+  const type = deviceType(ua);
+  return {
+    user_id: currentUserId(),
+    device_id: currentDeviceId(),
+    device_name: `${browser} on ${os}`,
+    browser_name: browser,
+    os_name: os,
+    device_type: type,
+    user_agent: ua.slice(0, 500),
+    last_seen_at: new Date().toISOString(),
+    signed_out_at: null
+  };
+}
+
 function deliveryAddressStorageKey() {
   const userKey = state.session?.user?.id || currentUserEmail() || "guest";
   return `${deliveryAddressLegacyKey}:${encodeURIComponent(userKey)}`;
@@ -642,6 +743,76 @@ async function writeCartToBackend(items) {
   return normalizeCartItems(data.cart || items);
 }
 
+function canUseDeviceDb() {
+  return Boolean(supabase && currentUserId());
+}
+
+function normalizeDevice(row = {}) {
+  return {
+    userId: row.user_id || currentUserId(),
+    deviceId: row.device_id || "",
+    deviceName: row.device_name || "Unknown device",
+    browserName: row.browser_name || "Browser",
+    osName: row.os_name || "Unknown OS",
+    deviceType: row.device_type || "Device",
+    userAgent: row.user_agent || "",
+    firstSeenAt: row.first_seen_at || "",
+    lastSeenAt: row.last_seen_at || "",
+    signedOutAt: row.signed_out_at || ""
+  };
+}
+
+async function registerCurrentDevice() {
+  if (!canUseDeviceDb()) {
+    return { ok: false, error: new Error("Supabase device DB is not configured.") };
+  }
+
+  const { error } = await supabase
+    .from(deviceDbTable)
+    .upsert(currentDevicePayload(), { onConflict: "user_id,device_id" });
+
+  if (error) {
+    return { ok: false, error };
+  }
+
+  return { ok: true };
+}
+
+async function readDevicesFromDb() {
+  if (!canUseDeviceDb()) {
+    return { ok: false, error: new Error("Supabase device DB is not configured.") };
+  }
+
+  const { data, error } = await supabase
+    .from(deviceDbTable)
+    .select("user_id, device_id, device_name, browser_name, os_name, device_type, user_agent, first_seen_at, last_seen_at, signed_out_at")
+    .eq("user_id", currentUserId())
+    .is("signed_out_at", null)
+    .order("last_seen_at", { ascending: false });
+
+  if (error) {
+    return { ok: false, error };
+  }
+
+  return {
+    ok: true,
+    devices: (data || []).map(normalizeDevice)
+  };
+}
+
+async function markCurrentDeviceSignedOut() {
+  if (!canUseDeviceDb()) {
+    return;
+  }
+
+  const now = new Date().toISOString();
+  await supabase
+    .from(deviceDbTable)
+    .update({ signed_out_at: now, last_seen_at: now })
+    .eq("user_id", currentUserId())
+    .eq("device_id", currentDeviceId());
+}
+
 function normalizePaymentAddress(address = {}) {
   return {
     fullName: String(address.fullName || address.full_name || "").trim(),
@@ -846,6 +1017,33 @@ async function loadCache() {
   }
 }
 
+async function loadDevices() {
+  if (!isSignedIn()) {
+    state.devices = [];
+    return;
+  }
+
+  state.loading.devices = true;
+  render();
+  try {
+    const registerResult = await registerCurrentDevice();
+    const dbResult = await readDevicesFromDb();
+    if (!dbResult.ok) {
+      throw dbResult.error || registerResult.error;
+    }
+    state.devices = dbResult.devices;
+    if (!registerResult.ok) {
+      setMessage(registerResult.error?.message || "Could not refresh this device.", "error");
+    }
+  } catch (error) {
+    state.devices = [];
+    setMessage(error.message || "Could not load signed-in devices.", "error");
+  } finally {
+    state.loading.devices = false;
+    render();
+  }
+}
+
 async function loadHealth() {
   state.loading.health = true;
   render();
@@ -900,6 +1098,9 @@ async function loadPageData() {
   }
   if (page === "orders") {
     await Promise.all([loadOrders(), loadCache()]);
+  }
+  if (page === "devices") {
+    await loadDevices();
   }
   if (page === "cache" || page === "user" || page === "owner" || page === "admin") {
     await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
@@ -1186,6 +1387,7 @@ async function submitAuth() {
       return;
     }
 
+    await registerCurrentDevice();
     const nextUrl = new URLSearchParams(window.location.search).get("next") || "/user/";
     window.location.href = nextUrl;
   } catch (error) {
@@ -1344,6 +1546,7 @@ async function submitPaymentAddress(form) {
 
 async function signOut() {
   if (supabase) {
+    await markCurrentDeviceSignedOut().catch(() => {});
     await supabase.auth.signOut();
   }
   state.session = null;
@@ -1352,6 +1555,7 @@ async function signOut() {
   state.cache = null;
   state.health = null;
   state.deliveryAddress = null;
+  state.devices = [];
   window.location.href = "/login/";
 }
 
@@ -1421,7 +1625,7 @@ function renderBottomNav() {
     <nav class="bottom-nav module-bottom-nav" aria-label="Customer navigation">
       ${bottomNavLink(homeHref, "home", "Home", ["home", "user"])}
       ${bottomNavLink("/categories/", "categories", "Categories", "categories")}
-      ${bottomNavLink("/account/", "account", "Account", ["account", "orders", "cache"])}
+      ${bottomNavLink("/account/", "account", "Account", ["account", "devices", "orders", "cache"])}
       ${bottomNavLink("/cart/", "cart", "Cart", ["publicCart", "cart"], cartCount() ? String(cartCount()) : "")}
     </nav>
   `;
@@ -1790,10 +1994,64 @@ function renderRecentlyViewedStore([title, image]) {
   `;
 }
 
+function formatDeviceDate(value) {
+  if (!value) {
+    return "Unknown";
+  }
+  return formatDate(value);
+}
+
+function isCurrentDevice(device) {
+  return device.deviceId === currentDeviceId();
+}
+
+function renderDeviceCard(device) {
+  const current = isCurrentDevice(device);
+  return `
+    <article class="device-card ${current ? "current" : ""}">
+      <span class="device-card-icon">${renderAccountIcon("devices")}</span>
+      <div>
+        <h3>${escapeHtml(device.deviceName)}</h3>
+        <p>${escapeHtml(device.deviceType)} / ${escapeHtml(device.browserName)} / ${escapeHtml(device.osName)}</p>
+        <small>Last active ${escapeHtml(formatDeviceDate(device.lastSeenAt))}</small>
+      </div>
+      ${current ? `<strong>Current</strong>` : ""}
+    </article>
+  `;
+}
+
+function renderDevicesPage() {
+  const devices = state.devices;
+  return `
+    <main class="clone-page account-page devices-page">
+      ${renderCloneBackBar("Manage Devices")}
+      ${renderMessage()}
+
+      <section class="account-section device-summary-section">
+        <h2>Logged-in devices</h2>
+        <p>These are the browsers and devices currently saved as active for ${escapeHtml(currentUserEmail())}.</p>
+      </section>
+
+      <section class="account-section device-list-section" aria-label="Logged-in devices">
+        ${state.loading.devices ? `<div class="device-loading">Loading devices...</div>` : ""}
+        ${!state.loading.devices && devices.length ? devices.map(renderDeviceCard).join("") : ""}
+        ${!state.loading.devices && !devices.length ? `
+          <div class="device-empty-state">
+            <span>${renderAccountIcon("devices")}</span>
+            <strong>No devices found</strong>
+            <p>Run the device table SQL in Supabase, then sign in again from each device.</p>
+          </div>
+        ` : ""}
+      </section>
+    </main>
+    ${renderBottomNav()}
+  `;
+}
+
 function renderSignedInAccountPage() {
   const signedAccountSettingsRows = [
     ["plus", "zaki Plus", ""],
-    ["devices", "Manage Devices", ""],
+    ["devices", "Manage Devices", "", "/account/devices/"],
     ["user", "Edit Profile", ""],
     ["wallet", "Saved Credit / Debit & Gift Cards", ""],
     ["location", "Saved Addresses", ""],
@@ -3129,6 +3387,8 @@ function render() {
     app.innerHTML = renderCategoriesPage();
   } else if (page === "account") {
     app.innerHTML = renderAccountPage();
+  } else if (page === "devices") {
+    app.innerHTML = renderDevicesPage();
   } else if (page === "publicCart") {
     app.innerHTML = renderPublicCartPage();
   } else if (page === "product") {
@@ -3288,6 +3548,10 @@ async function bootstrap() {
     return;
   }
 
+  if (state.session) {
+    registerCurrentDevice().catch(() => {});
+  }
+
   render();
   await loadPageData();
 
@@ -3302,6 +3566,7 @@ async function bootstrap() {
       return;
     }
     if (nextSession && page !== "login") {
+      await registerCurrentDevice();
       await loadPageData();
       return;
     }

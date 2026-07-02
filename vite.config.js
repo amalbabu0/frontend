@@ -13,6 +13,7 @@ export default defineConfig({
         home: htmlEntry("./index.html"),
         categories: htmlEntry("./categories/index.html"),
         account: htmlEntry("./account/index.html"),
+        accountDevices: htmlEntry("./account/devices/index.html"),
         publicCart: htmlEntry("./cart/index.html"),
         login: htmlEntry("./login/index.html"),
         product: htmlEntry("./product/index.html"),

@@ -7,6 +7,10 @@
       "destination": "/account/index.html"
     },
     {
+      "source": "/account/devices",
+      "destination": "/account/devices/index.html"
+    },
+    {
       "source": "/cart",
       "destination": "/cart/index.html"
     },
