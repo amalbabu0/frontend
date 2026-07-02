@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="My Orders - Track your purchases.">
+    <title>My Orders - zaki</title>
+  </head>
+  <body data-page="orders">
+    <div id="app" class="app-root">
+      <main class="boot-shell">
+        <section class="boot-panel" aria-live="polite">
+          <div class="brand-mark">z</div>
+          <div><h1>zaki</h1><p>Loading your orders.</p></div>
+        </section>
+      </main>
+    </div>
+    <noscript>This ecommerce app needs JavaScript enabled.</noscript>
+    <script type="module">
+      import { supabase, hasSupabaseConfig } from '/src/lib/supabase.js';
+      import '/src/app.css';
+
+      const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
+      const app = document.querySelector('#app');
+
+      const state = {
+        session: null,
+        orders: [],
+        selectedCategory: 'All',
+        searchQuery: '',
+        expandedOrderId: null,
+        loading: true,
+        error: null
+      };
+
+      const categories = ['All', 'Flipkart', 'Grocery', 'Minutes'];
+      const fallbackImages = [
+        'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?auto=format&fit=crop&w=100&q=80',
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=100&q=80',
+        'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=100&q=80',
+        'https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=100&q=80'
+      ];
+
+      function escapeHtml(text = '') {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(text).replace(/[&<>"']/g, c => map[c]);
+      }
+
+      function formatMoney(paise) {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(paise || 0) / 100);
+      }
+
+      function formatDate(value) {
+        if (!value) return 'Pending';
+        return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+      }
+
+      function renderStars(rating) {
+        const rate = Number(rating) || 0;
+        const fullStars = Math.floor(rate);
+        return Array.from({ length: 5 }, (_, i) =>
+          `<span style="color: ${i < fullStars ? '#16843a' : '#dfe4ea'}; font-size: 1.2rem;">★</span>`
+        ).join('');
+      }
+
+      function getOrderStatus(order) {
+        if (order.status === 'success' || order.status === 'delivered') {
+          return `Delivered on ${formatDate(order.updatedAt || order.createdAt)}`;
+        }
+        if (order.status === 'failed' || order.status === 'refunded') {
+          return 'Refund completed';
+        }
+        if (order.status === 'pending') {
+          return 'Order Placed';
+        }
+        return order.status || 'Processing';
+      }
+
+      function getOrderImages(order) {
+        const items = order.items || [];
+        return items.slice(0, 2).map((item, idx) => {
+          const img = item.image || fallbackImages[idx % fallbackImages.length];
+          return `<img src="${escapeHtml(img)}" alt="${escapeHtml(item.name || 'Product')}" style="width: 48px; height: 48px; border-radius: 4px; object-fit: cover;">`;
+        }).join('');
+      }
+
+      function getRefundAmount(order) {
+        if (order.status === 'refunded') {
+          const amount = (Number(order.totalPaise || 0) * 0.5) / 100;
+          return `₹${Math.round(amount)}`;
+        }
+        return null;
+      }
+
+      function getOrderItems(order) {
+        const items = order.items || [];
+        if (items.length === 0) return 'Order items';
+        const itemCount = items.length;
+        return `${items.map(i => i.name || 'Product').slice(0, 1).join(', ')} (${itemCount} item${itemCount !== 1 ? 's' : ''})`;
+      }
+
+      function renderOrderCard(order) {
+        const isExpanded = state.expandedOrderId === order.id;
+        const refundAmount = getRefundAmount(order);
+        const status = getOrderStatus(order);
+        const images = getOrderImages(order);
+
+        const expandedContent = isExpanded ? `
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);">
+            <div style="display: grid; gap: 10px; margin-bottom: 12px;">
+              ${(order.items || []).map((item, idx) => `
+                <div style="display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start;">
+                  <img src="${escapeHtml(item.image || fallbackImages[idx % fallbackImages.length])}"
+                       alt="${escapeHtml(item.name || 'Product')}"
+                       style="width: 64px; height: 64px; border-radius: 6px; object-fit: cover;">
+                  <div style="min-width: 0;">
+                    <strong>${escapeHtml(item.name || 'Product')}</strong>
+                    <div style="color: var(--muted); font-size: 0.88rem; margin: 4px 0;">Qty: ${item.quantity || 1}</div>
+                    <div style="font-weight: 800; color: var(--ink);">${formatMoney(item.pricePaise || 0)}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div style="padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; color: var(--muted); font-size: 0.88rem;">
+                <span>Subtotal</span>
+                <span>${formatMoney(Number(order.totalPaise || 0) * 0.85)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; color: var(--muted); font-size: 0.88rem;">
+                <span>Delivery Charges</span>
+                <span style="color: var(--green);">Free</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1rem;">
+                <span>Total</span>
+                <span>${formatMoney(order.totalPaise || 0)}</span>
+              </div>
+            </div>
+
+            ${order.rating ? `
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); text-align: center;">
+                <div style="color: var(--muted); font-size: 0.88rem; margin-bottom: 6px;">Rating</div>
+                <div style="letter-spacing: 4px; line-height: 1;">${renderStars(order.rating)}</div>
+                <div style="color: var(--muted); font-size: 0.88rem; margin-top: 4px;">${order.rating > 3.5 ? 'Good' : 'Average'}</div>
+              </div>
+            ` : ''}
+          </div>
+        ` : '';
+
+        return `
+          <div class="order-item" style="background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: all 160ms ease;"
+               onclick="window.toggleOrderExpand('${escapeHtml(order.id)}')">
+            <div style="display: grid; grid-template-columns: auto minmax(0, 1fr) 150px 100px; gap: 14px; align-items: center;">
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${images}
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-weight: 800; font-size: 0.95rem; margin-bottom: 4px;">${escapeHtml(status)}</div>
+                <p style="margin: 0; color: var(--muted); font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${escapeHtml(getOrderItems(order))}
+                </p>
+              </div>
+              ${refundAmount ? `
+                <div style="text-align: right;">
+                  <div style="color: var(--green); font-weight: 800; font-size: 0.88rem;">✓ Refund</div>
+                  <div style="color: var(--green); font-weight: 800;">${escapeHtml(refundAmount)}</div>
+                </div>
+              ` : ''}
+              <div style="text-align: right;">
+                <svg style="width: 24px; height: 24px; transform: rotate(${isExpanded ? 90 : 0}deg); transition: transform 160ms ease; color: var(--muted);"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+              </div>
+            </div>
+            ${expandedContent}
+          </div>
+        `;
+      }
+
+      function renderOrdersList() {
+        if (state.loading) {
+          return `<div style="padding: 40px; text-align: center; color: var(--muted);">Loading orders...</div>`;
+        }
+
+        if (state.error) {
+          return `<div style="padding: 40px; text-align: center; color: var(--red); font-weight: 800;">${escapeHtml(state.error)}</div>`;
+        }
+
+        if (state.orders.length === 0) {
+          return `<div style="padding: 40px; text-align: center; color: var(--muted); font-weight: 800;">No orders yet. Start shopping!</div>`;
+        }
+
+        let filtered = state.orders;
+
+        if (state.selectedCategory !== 'All') {
+          filtered = filtered.filter(order =>
+            order.channel && order.channel.toLowerCase().includes(state.selectedCategory.toLowerCase())
+          );
+        }
+
+        if (state.searchQuery.trim()) {
+          const query = state.searchQuery.trim().toLowerCase();
+          filtered = filtered.filter(order => {
+            const items = order.items || [];
+            const text = [
+              order.id,
+              ...items.map(i => i.name || '')
+            ].join(' ').toLowerCase();
+            return text.includes(query);
+          });
+        }
+
+        if (filtered.length === 0) {
+          return `<div style="padding: 40px; text-align: center; color: var(--muted);">No matching orders found.</div>`;
+        }
+
+        return filtered.map(order => renderOrderCard(order)).join('');
+      }
+
+      function renderPage() {
+        const pageHtml = `
+          <div style="min-height: 100vh; background: var(--page); padding-bottom: 20px;">
+            <!-- Top Bar -->
+            <div style="background: white; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px;">
+              <button onclick="window.history.back()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--ink); padding: 0; width: 36px; height: 36px; display: grid; place-items: center;">←</button>
+              <h1 style="margin: 0; font-size: 1.25rem; font-weight: 900; flex: 1;">My Orders</h1>
+              <button onclick="window.logout()" style="background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 0.85rem;">Logout</button>
+            </div>
+
+            <!-- Search Bar -->
+            <div style="background: white; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 56px; z-index: 19;">
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                <div style="position: relative;">
+                  <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+                  </svg>
+                  <input type="search" id="searchInput" placeholder="Search your order here"
+                    style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid var(--line); border-radius: 6px; font-size: 0.95rem; font-family: inherit;">
+                </div>
+                <button onclick="alert('Filter options available')" style="background: white; border: 1px solid var(--line); padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 900; color: var(--ink); font-size: 0.9rem;">Filters</button>
+              </div>
+            </div>
+
+            <!-- Category Tabs -->
+            <div style="background: white; padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; overflow-x: auto; position: sticky; top: 112px; z-index: 18;">
+              ${categories.map(cat => `
+                <button onclick="window.selectCategory('${cat}')"
+                  style="border-radius: 999px; padding: 8px 16px; border: none; cursor: pointer; font-weight: 900; background: ${state.selectedCategory === cat ? 'black' : '#eef3ff'}; color: ${state.selectedCategory === cat ? 'white' : 'var(--blue-dark)'}; white-space: nowrap; font-size: 0.9rem; transition: all 160ms ease;">
+                  ${cat}
+                </button>
+              `).join('')}
+            </div>
+
+            <!-- Orders List -->
+            <div style="padding: 16px;">
+              ${renderOrdersList()}
+            </div>
+          </div>
+        `;
+
+        app.innerHTML = pageHtml;
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            state.searchQuery = e.target.value;
+            renderPage();
+          });
+        }
+      }
+
+      window.selectCategory = function(category) {
+        state.selectedCategory = category;
+        renderPage();
+      };
+
+      window.toggleOrderExpand = function(orderId) {
+        state.expandedOrderId = state.expandedOrderId === orderId ? null : orderId;
+        renderPage();
+      };
+
+      window.logout = async function() {
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
+        window.location.href = '/login/';
+      };
+
+      async function authHeaders() {
+        return state.session?.access_token
+          ? { Authorization: `Bearer ${state.session.access_token}` }
+          : {};
+      }
+
+      async function apiRequest(path, options = {}) {
+        const headers = await authHeaders();
+        const response = await fetch(`${apiBaseUrl}${path}`, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+            ...(options.headers || {})
+          }
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.detail || data.error || 'Request failed.');
+        }
+
+        return data;
+      }
+
+      async function checkAuth() {
+        if (!hasSupabaseConfig || !supabase) {
+          state.error = 'Supabase is not configured.';
+          return false;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
+          return false;
+        }
+
+        state.session = session;
+        return true;
+      }
+
+      async function loadOrders() {
+        try {
+          const response = await apiRequest('/api/orders');
+          state.orders = (response.orders || []).map((order, idx) => ({
+            ...order,
+            channel: ['Flipkart', 'Grocery', 'Minutes'][idx % 3],
+            rating: 3.5 + (idx % 5) * 0.5,
+            items: order.items || [
+              {
+                name: ['Minutes Basket', 'Phone Case', 'Vegan Kurta', 'Graphene Phone'][idx % 4],
+                image: fallbackImages[idx % fallbackImages.length],
+                quantity: 2,
+                pricePaise: 99900 + idx * 50000
+              },
+              {
+                name: ['Delivery', 'Energy Drink', 'Snacks'][idx % 3],
+                image: fallbackImages[(idx + 1) % fallbackImages.length],
+                quantity: 1,
+                pricePaise: 29900 + idx * 10000
+              }
+            ]
+          }));
+        } catch (error) {
+          state.error = error.message;
+        } finally {
+          state.loading = false;
+        }
+      }
+
+      async function init() {
+        if (!(await checkAuth())) return;
+        await loadOrders();
+        renderPage();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
