@@ -3,22 +3,315 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="zaki payment page with delivery address and Razorpay handoff.">
-    <title>Payment - zaki</title>
+    <meta name="description" content="Checkout & Payment - zaki">
+    <title>Order Summary - zaki</title>
   </head>
   <body data-page="payment">
     <div id="app" class="app-root">
       <main class="boot-shell">
         <section class="boot-panel" aria-live="polite">
           <div class="brand-mark">z</div>
-          <div>
-            <h1>zaki</h1>
-            <p>Loading payment.</p>
-          </div>
+          <div><h1>zaki</h1><p>Loading checkout.</p></div>
         </section>
       </main>
     </div>
     <noscript>This ecommerce app needs JavaScript enabled.</noscript>
-    <script type="module" src="/src/main.js"></script>
+    <script type="module">
+      import { supabase, hasSupabaseConfig } from '/src/lib/supabase.js';
+      import '/src/app.css';
+
+      const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
+      const app = document.querySelector('#app');
+
+      const state = {
+        session: null,
+        cartItems: [],
+        currentStep: 'summary', // summary or address or payment
+        selectedAddress: null,
+        addresses: [
+          { id: 1, name: 'Home', address: '123, Main Street, City 560001', phone: '9876543210' },
+          { id: 2, name: 'Office', address: '456, Tech Park, Bangalore 560100', phone: '9876543211' }
+        ],
+        loading: true,
+        error: null
+      };
+
+      function escapeHtml(text = '') {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(text).replace(/[&<>"']/g, c => map[c]);
+      }
+
+      function formatMoney(paise) {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(paise || 0) / 100);
+      }
+
+      function getCartTotal() {
+        return state.cartItems.reduce((sum, item) => sum + (Number(item.pricePaise || 0) * Number(item.quantity || 1)), 0);
+      }
+
+      function renderSummaryStep() {
+        const subtotal = getCartTotal();
+        const delivery = 0;
+        const discount = Math.round(subtotal * 0.05);
+        const total = subtotal - discount + delivery;
+
+        return `
+          <div style="min-height: 100vh; background: var(--page); padding-bottom: 100px;">
+            <!-- Header -->
+            <div style="background: white; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20;">
+              <h1 style="margin: 0; font-size: 1.25rem; font-weight: 900;">Order Summary</h1>
+              <p style="margin: 4px 0 0; color: var(--muted); font-size: 0.9rem;">Review before checkout</p>
+            </div>
+
+            <!-- Order Items -->
+            <div style="background: white; margin: 10px 0; padding: 16px;">
+              <h2 style="margin: 0 0 14px; font-size: 1rem; font-weight: 900;">Items (${state.cartItems.length})</h2>
+              ${state.cartItems.map((item, idx) => `
+                <div style="display: grid; grid-template-columns: 80px minmax(0, 1fr) auto; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: ${idx === state.cartItems.length - 1 ? 'none' : '1px solid var(--line)'};">
+                  <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=100&q=80"
+                       style="width: 80px; height: 80px; border-radius: 6px; object-fit: cover;">
+                  <div style="min-width: 0;">
+                    <strong style="display: block; margin-bottom: 4px;">${escapeHtml(item.name)}</strong>
+                    <span style="color: var(--muted); font-size: 0.9rem;">Qty: ${item.quantity}</span>
+                  </div>
+                  <div style="text-align: right; font-weight: 900;">${formatMoney(item.pricePaise * item.quantity)}</div>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Delivery Address -->
+            <div style="background: white; margin: 10px 0; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="margin: 0; font-size: 1rem; font-weight: 900;">Delivery Address</h2>
+                <button onclick="window.editAddress()"
+                  style="background: var(--blue); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 800; font-size: 0.85rem;">
+                  Change
+                </button>
+              </div>
+              <div style="padding: 12px; background: var(--soft); border-radius: 6px; border-left: 4px solid var(--blue);">
+                <div style="font-weight: 900; margin-bottom: 4px;">📍 Home</div>
+                <div style="color: var(--muted); font-size: 0.9rem; line-height: 1.5;">
+                  123, Main Street<br>
+                  City 560001<br>
+                  Phone: 9876543210
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div style="background: white; margin: 10px 0; padding: 16px;">
+              <h2 style="margin: 0 0 14px; font-size: 1rem; font-weight: 900;">Price Details</h2>
+              <div style="display: grid; gap: 10px; font-size: 0.95rem;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Subtotal</span>
+                  <span>${formatMoney(subtotal)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: var(--green);">
+                  <span>Discount (5%)</span>
+                  <span>-${formatMoney(discount)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>Delivery Charges</span>
+                  <span style="color: var(--green); font-weight: 900;">Free</span>
+                </div>
+                <div style="border-top: 1px solid var(--line); padding-top: 10px; display: flex; justify-content: space-between; font-weight: 900; font-size: 1.1rem;">
+                  <span>Total Amount</span>
+                  <span style="color: var(--green);">${formatMoney(total)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Continue Button -->
+            <div style="position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--line); padding: 14px 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); z-index: 30;">
+              <button onclick="window.continueToPayment()"
+                style="width: 100%; background: var(--yellow); border: none; padding: 14px; border-radius: 6px; cursor: pointer; font-weight: 900; color: var(--ink); font-size: 1rem;">
+                Continue to Payment
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAddressStep() {
+        return `
+          <div style="min-height: 100vh; background: var(--page); padding-bottom: 100px;">
+            <!-- Header -->
+            <div style="background: white; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <button onclick="window.backStep()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--ink); padding: 0;">←</button>
+                <h1 style="margin: 0; font-size: 1.25rem; font-weight: 900;">Select Address</h1>
+              </div>
+            </div>
+
+            <!-- Addresses -->
+            <div style="background: white; margin: 10px 0; padding: 16px;">
+              <h2 style="margin: 0 0 14px; font-size: 1rem; font-weight: 900;">Saved Addresses</h2>
+              ${state.addresses.map(addr => `
+                <div onclick="window.selectAddress(${addr.id})"
+                  style="padding: 14px; border: 2px solid ${state.selectedAddress?.id === addr.id ? 'var(--blue)' : 'var(--line)'}; border-radius: 8px; margin-bottom: 12px; cursor: pointer; background: ${state.selectedAddress?.id === addr.id ? '#eef3ff' : 'white'}; transition: all 160ms ease;">
+                  <div style="font-weight: 900; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                    <input type="radio" ${state.selectedAddress?.id === addr.id ? 'checked' : ''} style="cursor: pointer;">
+                    ${addr.name}
+                  </div>
+                  <div style="color: var(--muted); font-size: 0.9rem; line-height: 1.5;">
+                    ${addr.address}<br>
+                    Phone: ${addr.phone}
+                  </div>
+                </div>
+              `).join('')}
+
+              <button onclick="alert('Add new address form')"
+                style="width: 100%; background: var(--soft); border: 2px dashed var(--line); padding: 14px; border-radius: 8px; cursor: pointer; font-weight: 900; color: var(--blue); margin-top: 10px;">
+                + Add New Address
+              </button>
+            </div>
+
+            <!-- Continue Button -->
+            <div style="position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--line); padding: 14px 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); z-index: 30;">
+              <button onclick="window.confirmAddress()"
+                style="width: 100%; background: var(--yellow); border: none; padding: 14px; border-radius: 6px; cursor: pointer; font-weight: 900; color: var(--ink); font-size: 1rem;">
+                Continue
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderPaymentStep() {
+        return `
+          <div style="min-height: 100vh; background: var(--page); padding: 16px 16px 120px;">
+            <!-- Header -->
+            <div style="background: white; padding: 14px 16px; border-bottom: 1px solid var(--line); margin: -16px -16px 16px -16px;">
+              <h1 style="margin: 0; font-size: 1.25rem; font-weight: 900;">Payment Methods</h1>
+              <p style="margin: 4px 0 0; color: var(--muted); font-size: 0.9rem;">Choose how to pay</p>
+            </div>
+
+            <!-- Payment Options -->
+            <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+              <button onclick="window.proceedToRazorpay()"
+                style="width: 100%; padding: 16px; border: 2px solid var(--blue); background: var(--soft); border-radius: 8px; cursor: pointer; text-align: left; margin-bottom: 12px; transition: all 160ms ease;">
+                <div style="font-weight: 900; color: var(--ink); margin-bottom: 4px;">💳 Razorpay</div>
+                <div style="color: var(--muted); font-size: 0.85rem;">Credit Card, Debit Card, Net Banking, Wallet</div>
+              </button>
+
+              <button style="width: 100%; padding: 16px; border: 2px solid var(--line); background: white; border-radius: 8px; cursor: pointer; text-align: left; opacity: 0.5;">
+                <div style="font-weight: 900; color: var(--muted); margin-bottom: 4px;">🏦 Bank Transfer</div>
+                <div style="color: var(--muted); font-size: 0.85rem;">Coming soon</div>
+              </button>
+            </div>
+
+            <!-- Order Summary -->
+            <div style="background: white; padding: 16px; border-radius: 8px;">
+              <h3 style="margin: 0 0 12px; font-weight: 900;">Order Details</h3>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.9rem;">
+                <span>Subtotal</span>
+                <span>${formatMoney(getCartTotal() * 0.95)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); color: var(--green); font-size: 0.9rem;">
+                <span>Discount</span>
+                <span>-${formatMoney(getCartTotal() * 0.05)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 10px 0; font-weight: 900; font-size: 1.1rem;">
+                <span>Total</span>
+                <span style="color: var(--green);">${formatMoney(getCartTotal() * 0.95)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderPage() {
+        let content = '';
+        switch(state.currentStep) {
+          case 'summary':
+            content = renderSummaryStep();
+            break;
+          case 'address':
+            content = renderAddressStep();
+            break;
+          case 'payment':
+            content = renderPaymentStep();
+            break;
+        }
+        app.innerHTML = content;
+      }
+
+      window.editAddress = function() {
+        state.currentStep = 'address';
+        if (!state.selectedAddress) {
+          state.selectedAddress = state.addresses[0];
+        }
+        renderPage();
+      };
+
+      window.selectAddress = function(addressId) {
+        state.selectedAddress = state.addresses.find(a => a.id === addressId);
+        renderPage();
+      };
+
+      window.confirmAddress = function() {
+        if (!state.selectedAddress) {
+          alert('Please select an address');
+          return;
+        }
+        state.currentStep = 'payment';
+        renderPage();
+      };
+
+      window.continueToPayment = function() {
+        state.currentStep = 'payment';
+        renderPage();
+      };
+
+      window.backStep = function() {
+        state.currentStep = 'summary';
+        renderPage();
+      };
+
+      window.proceedToRazorpay = function() {
+        alert('Razorpay payment would be initiated here with amount: ' + formatMoney(getCartTotal() * 0.95));
+        // In production, integrate with Razorpay API
+      };
+
+      async function checkAuth() {
+        if (!hasSupabaseConfig || !supabase) {
+          state.error = 'Supabase is not configured.';
+          return false;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
+          return false;
+        }
+
+        state.session = session;
+        return true;
+      }
+
+      async function loadCart() {
+        try {
+          // Mock cart data
+          state.cartItems = [
+            { productId: 'watch-1', name: 'PETER ENGLAND Analog Watch', pricePaise: 122400, quantity: 1 },
+            { productId: 'oil-1', name: 'Aone 1000 ml Cooking Oil Dispenser', pricePaise: 36000, quantity: 2 },
+            { productId: 'earbuds-1', name: 'boAt Nirvana Ion', pricePaise: 299900, quantity: 1 }
+          ];
+          state.selectedAddress = state.addresses[0];
+        } catch (error) {
+          state.error = error.message;
+        } finally {
+          state.loading = false;
+        }
+      }
+
+      async function init() {
+        if (!(await checkAuth())) return;
+        await loadCart();
+        renderPage();
+      }
+
+      init();
+    </script>
   </body>
 </html>
