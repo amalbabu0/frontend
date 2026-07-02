@@ -6579,6 +6579,27 @@ body[data-page="sellerAccount"] {
   white-space: nowrap;
 }
 
+.seller-product-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.seller-product-card-actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #2874f0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #2459dd;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.seller-product-card-actions button:disabled {
+  border-color: #d7deea;
+  color: #8892a0;
+}
+
 .seller-product-status {
   flex: 0 0 auto;
   display: inline-grid;

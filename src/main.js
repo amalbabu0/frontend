@@ -580,6 +580,17 @@ function productById(productId) {
   return catalogProducts().find((product) => product.id === productId);
 }
 
+function mergeCatalogProducts(baseProducts = [], sellerProducts = []) {
+  const seenIds = new Set();
+  return [...sellerProducts, ...baseProducts].filter((product) => {
+    if (!product?.id || seenIds.has(product.id)) {
+      return false;
+    }
+    seenIds.add(product.id);
+    return true;
+  });
+}
+
 function productDetailHref(product) {
   return `/product/?id=${encodeURIComponent(product.id)}`;
 }
@@ -1025,6 +1036,32 @@ function normalizeSellerProduct(row = {}) {
   };
 }
 
+function normalizePublicSellerProduct(row = {}, index = 0) {
+  const product = normalizeSellerProduct(row);
+  if (!product?.id || product.status !== "active") {
+    return null;
+  }
+
+  const shortId = product.id.replace(/-/g, "").slice(0, 8).toUpperCase();
+  return enrichProduct({
+    id: `seller-${product.id}`,
+    name: product.name,
+    description: product.description || `${product.category} from a zaki seller`,
+    pricePaise: product.pricePaise,
+    badge: "Seller listing",
+    category: product.category || "Seller Store",
+    stock: product.stock,
+    image: product.imageUrl || fallbackImages[index % fallbackImages.length],
+    alt: `${product.name} seller product image`,
+    rating: "4.4",
+    delivery: "Tomorrow",
+    channel: "zaki Seller",
+    sku: `SELL-${shortId}`,
+    featured: true,
+    sellerProductId: product.id
+  }, index);
+}
+
 function sellerProductDbPayload(formData) {
   const priceRupees = Number(formData.get("price") || 0);
   return {
@@ -1036,9 +1073,30 @@ function sellerProductDbPayload(formData) {
     stock: Math.max(0, Number.parseInt(formData.get("stock") || "0", 10) || 0),
     image_url: String(formData.get("imageUrl") || "").trim() || null,
     description: String(formData.get("description") || "").trim() || null,
-    status: String(formData.get("status") || "draft").trim() || "draft",
+    status: String(formData.get("status") || "active").trim() || "active",
     updated_at: new Date().toISOString()
   };
+}
+
+async function readPublicSellerProductsFromDb() {
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from(sellerProductDbTable)
+    .select("id, seller_id, user_id, name, category, price_paise, stock, image_url, description, status, created_at, updated_at")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(60);
+
+  if (error) {
+    throw error;
+  }
+
+  return (Array.isArray(data) ? data : [])
+    .map(normalizePublicSellerProduct)
+    .filter(Boolean);
 }
 
 async function readSellerProductsFromDb() {
@@ -1071,6 +1129,26 @@ async function writeSellerProductToDb(formData) {
   const { data, error } = await supabase
     .from(sellerProductDbTable)
     .insert(sellerProductDbPayload(formData))
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return normalizeSellerProduct(data);
+}
+
+async function updateSellerProductStatusInDb(productId, status) {
+  if (!canUseSellerProductDb()) {
+    throw new Error("Supabase seller product DB is not configured.");
+  }
+
+  const { data, error } = await supabase
+    .from(sellerProductDbTable)
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", productId)
+    .eq("user_id", currentUserId())
     .select("*")
     .single();
 
@@ -1224,13 +1302,20 @@ async function persistPaymentAddress(address) {
 async function loadProducts() {
   state.loading.products = true;
   render();
+  let liveSellerProducts = [];
+  try {
+    liveSellerProducts = await readPublicSellerProductsFromDb();
+  } catch {
+    liveSellerProducts = [];
+  }
   try {
     const data = await apiRequest("/api/products");
-    state.products = (data.products || []).map(enrichProduct);
-    state.productCache = data.cache || {};
+    const baseProducts = (data.products || []).map(enrichProduct);
+    state.products = mergeCatalogProducts(baseProducts, liveSellerProducts);
+    state.productCache = { ...(data.cache || {}), sellerProducts: liveSellerProducts.length };
   } catch (error) {
-    state.products = starterCatalogProducts();
-    state.productCache = { enabled: false, source: "starter-catalog", hit: false };
+    state.products = mergeCatalogProducts(starterCatalogProducts(), liveSellerProducts);
+    state.productCache = { enabled: false, source: "starter-catalog", hit: false, sellerProducts: liveSellerProducts.length };
     if (page !== "home" && page !== "categories" && page !== "product") {
       setMessage(error.message, "error");
     }
@@ -2045,6 +2130,27 @@ async function submitSellerProduct(form) {
       ? "Run the seller products SQL in Supabase, then add the product again."
       : error.message || "Could not add product.";
     setMessage(message, "error");
+  } finally {
+    state.loading.action = "";
+    render();
+  }
+}
+
+async function updateSellerProductStatus(productId, status) {
+  clearMessage();
+  if (!productId || !["active", "paused", "draft"].includes(status)) {
+    setMessage("Choose a valid product status.", "error");
+    return;
+  }
+
+  try {
+    state.loading.action = `seller-product-status:${productId}`;
+    render();
+    const product = await updateSellerProductStatusInDb(productId, status);
+    state.sellerProducts = state.sellerProducts.map((item) => item.id === product.id ? product : item);
+    setMessage(status === "active" ? "Product is live for other users." : "Product is paused.");
+  } catch (error) {
+    setMessage(error.message || "Could not update product status.", "error");
   } finally {
     state.loading.action = "";
     render();
@@ -2879,8 +2985,8 @@ function renderSellerProductForm() {
         </label>
         <label>Status
           <select name="status" data-focus-key="seller-product-status">
-            <option value="draft">Draft</option>
             <option value="active">Live</option>
+            <option value="draft">Draft</option>
             <option value="paused">Paused</option>
           </select>
         </label>
@@ -2913,6 +3019,11 @@ function renderSellerProductForm() {
 function renderSellerProductCard(product) {
   const status = product.status || "draft";
   const productInitial = (product.name || "P").trim().charAt(0).toUpperCase();
+  const statusLoading = state.loading.action === `seller-product-status:${product.id}`;
+  const statusButtonAttrs = `data-action="seller-product-status" data-product-id="${escapeHtml(product.id)}" ${statusLoading ? "disabled" : ""}`;
+  const statusAction = status === "active"
+    ? `<button type="button" ${statusButtonAttrs} data-status="paused">${statusLoading ? "Updating..." : "Pause"}</button>`
+    : `<button type="button" ${statusButtonAttrs} data-status="active">${statusLoading ? "Updating..." : "Make live"}</button>`;
   return `
     <article class="seller-product-card">
       <div class="seller-product-media">
@@ -2931,6 +3042,9 @@ function renderSellerProductCard(product) {
           <div><dt>Stock</dt><dd>${escapeHtml(product.stock)}</dd></div>
           <div><dt>Category</dt><dd>${escapeHtml(product.category)}</dd></div>
         </dl>
+        <div class="seller-product-card-actions">
+          ${statusAction}
+        </div>
       </div>
     </article>
   `;
@@ -4523,6 +4637,9 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "buy-now-quantity") {
     updateBuyNowQuantity(button.dataset.productId, Number(button.dataset.direction));
+  }
+  if (action === "seller-product-status") {
+    await updateSellerProductStatus(button.dataset.productId, button.dataset.status || "active");
   }
   if (action === "clear-cart") {
     await clearCart();

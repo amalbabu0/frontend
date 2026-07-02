@@ -8,7 +8,7 @@ create table if not exists public.seller_products (
   stock integer not null default 0 check (stock >= 0),
   image_url text,
   description text,
-  status text not null default 'draft' check (status in ('draft', 'active', 'paused')),
+  status text not null default 'active' check (status in ('draft', 'active', 'paused')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -21,6 +21,9 @@ on public.seller_products(seller_id);
 
 create index if not exists idx_seller_products_status
 on public.seller_products(status);
+
+alter table public.seller_products
+alter column status set default 'active';
 
 alter table public.seller_products enable row level security;
 
