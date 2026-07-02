@@ -2022,9 +2022,9 @@ function renderAccountIcon(icon) {
   return icons[icon] || icons.question;
 }
 
-function renderAccountListRow([icon, title, subtitle]) {
+function renderAccountListRow([icon, title, subtitle, nextUrl = "/account/"]) {
   return `
-    <a class="account-list-row" href="/login/?next=${encodeURIComponent("/account/")}">
+    <a class="account-list-row" href="/login/?next=${encodeURIComponent(nextUrl)}">
       <span class="account-row-icon">${renderAccountIcon(icon)}</span>
       <span>
         <strong>${escapeHtml(title)}</strong>
@@ -2193,7 +2193,7 @@ function renderSignedInAccountPage() {
 
       <section class="account-section signed-settings-section">
         <h2>Earn with zaki</h2>
-        ${renderSignedAccountRow(["shop", "Sell on zaki", ""])}
+        ${renderSignedAccountRow(["shop", "Sell on zaki", "", "/account/become-seller/"])}
       </section>
 
       <section class="account-section signed-settings-section">
@@ -2241,7 +2241,7 @@ function renderAccountPage() {
 
       <section class="account-section">
         <h2>Earn with zaki</h2>
-        ${renderAccountListRow(["shop", "Sell on zaki", ""])}
+        ${renderAccountListRow(["shop", "Sell on zaki", "", "/account/become-seller/"])}
       </section>
 
       <section class="account-section">
