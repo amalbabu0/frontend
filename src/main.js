@@ -2140,7 +2140,6 @@ function renderSignedInAccountPage() {
     ["plus", "zaki Plus", ""],
     ["devices", "Manage Devices", "", "/account/devices/"],
     ["user", "Edit Profile", ""],
-    ["wallet", "Saved Credit / Debit & Gift Cards", ""],
     ["location", "Saved Addresses", ""],
     ["language", "Select Language", ""],
     ["bell", "Notification Settings", ""],
