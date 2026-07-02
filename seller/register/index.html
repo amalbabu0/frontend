@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Sell on zaki - Start your journey as a seller">
-    <title>Sell on zaki - Seller Benefits</title>
+    <meta name="description" content="Seller Registration - Create your zaki Seller Account">
+    <title>Register as Seller - zaki</title>
     <style>
       * {
         box-sizing: border-box;
@@ -17,213 +17,29 @@
         color: #172337;
       }
 
-      .seller-landing {
+      .seller-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
         min-height: 100vh;
         background: white;
       }
 
-      .seller-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 40px;
-        background: white;
-        border-bottom: 1px solid #dfe4ea;
-        position: sticky;
-        top: 0;
-        z-index: 20;
-      }
-
-      .seller-logo {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 20px;
-        font-weight: 900;
-      }
-
-      .seller-logo-mark {
-        display: grid;
-        width: 32px;
-        height: 32px;
-        place-items: center;
-        border-radius: 6px;
-        background: #ffb703;
-        color: #174ea6;
-        font-weight: 900;
-      }
-
-      .seller-actions {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-      }
-
-      .seller-login {
-        padding: 8px 16px;
-        background: transparent;
-        border: 1px solid #dfe4ea;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 800;
-        font-size: 0.9rem;
-      }
-
-      .seller-start {
-        padding: 10px 20px;
-        background: #ffb703;
-        color: #174ea6;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 900;
-        font-size: 0.9rem;
-      }
-
-      .seller-start:hover {
-        background: #ffc035;
-      }
-
-      .seller-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 40px 20px;
-      }
-
-      .seller-hero {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 40px;
-        align-items: center;
-        margin-bottom: 60px;
-      }
-
-      .seller-hero-text h1 {
-        margin: 0 0 16px;
-        font-size: 2.5rem;
-        line-height: 1.2;
-        color: #2874f0;
-      }
-
-      .seller-hero-text p {
-        margin: 0 0 20px;
-        font-size: 1.1rem;
-        color: #687385;
-        line-height: 1.6;
-      }
-
-      .seller-hero-image {
-        width: 100%;
-        max-width: 500px;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-
-      .seller-hero-image img {
-        width: 100%;
-        height: auto;
-        display: block;
-      }
-
-      .benefits-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
-        margin-bottom: 60px;
-      }
-
-      .benefit-card {
-        text-align: center;
-      }
-
-      .benefit-number {
-        font-size: 2.5rem;
-        font-weight: 900;
-        color: #2874f0;
-        margin-bottom: 8px;
-      }
-
-      .benefit-label {
-        font-size: 0.9rem;
-        color: #687385;
-        font-weight: 600;
-      }
-
-      .benefit-title {
-        font-weight: 900;
-        margin-top: 8px;
-      }
-
-      .why-section {
+      .seller-left {
         background: white;
         padding: 40px;
-        border-radius: 8px;
-        border: 1px solid #dfe4ea;
-        margin-bottom: 40px;
-      }
-
-      .why-section h2 {
-        margin: 0 0 24px;
-        font-size: 1.8rem;
-        color: #2874f0;
-      }
-
-      .why-section p {
-        margin: 0;
-        color: #687385;
-        line-height: 1.6;
-      }
-
-      .why-section strong {
-        color: #172337;
-      }
-
-      .seller-features {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-        margin: 30px 0 0;
-      }
-
-      .feature {
         display: flex;
-        gap: 12px;
-        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
       }
 
-      .feature-icon {
-        font-size: 1.8rem;
-        flex-shrink: 0;
-      }
-
-      .feature-text h3 {
-        margin: 0 0 4px;
-        font-weight: 900;
-      }
-
-      .feature-text p {
-        margin: 0;
-        font-size: 0.85rem;
-        color: #687385;
-      }
-
-      @media (max-width: 768px) {
-        .seller-hero {
-          grid-template-columns: 1fr;
-        }
-
-        .seller-hero-text h1 {
-          font-size: 1.8rem;
-        }
-
-        .benefits-grid {
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-        }
-
-        .seller-features {
-          grid-template-columns: 1fr;
-        }
+      .seller-right {
+        background: linear-gradient(135deg, #2874f0 0%, #174ea6 100%);
+        color: white;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       }
 
       .seller-logo {
@@ -392,10 +208,10 @@
       .register-button {
         width: 100%;
         padding: 14px;
-        background: #fb641b;
+        background: #2874f0;
         color: white;
         border: none;
-        border-radius: 2px;
+        border-radius: 4px;
         font-size: 16px;
         font-weight: 800;
         cursor: pointer;
@@ -407,7 +223,7 @@
       }
 
       .register-button:hover {
-        background: #d94215;
+        background: #174ea6;
       }
 
       .register-button:disabled {
@@ -449,119 +265,11 @@
     </style>
   </head>
   <body>
-    <div class="seller-landing">
-      <!-- Header -->
-      <div class="seller-header">
-        <div class="seller-logo">
-          <div class="seller-logo-mark">z</div>
-          <span>zaki Seller Hub</span>
-        </div>
-        <div class="seller-actions">
-          <button class="seller-login" onclick="window.location.href='/login/'">Login</button>
-          <button class="seller-start" onclick="window.location.href='/seller/register/'">Start Selling</button>
-        </div>
-      </div>
-
-      <!-- Main Content -->
-      <div class="seller-container">
-        <!-- Hero Section -->
-        <div class="seller-hero">
-          <div class="seller-hero-text">
-            <h1>Grow your business on zaki</h1>
-            <p>Join millions of sellers and reach millions of customers across India. Start selling today with zero commission!</p>
-            <button class="seller-start" style="padding: 14px 28px; font-size: 1rem; width: fit-content;" onclick="window.location.href='/seller/register/'">Start Selling →</button>
-          </div>
-          <div class="seller-hero-image">
-            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=500&q=80" alt="Seller">
-          </div>
-        </div>
-
-        <!-- Benefits Section -->
-        <div class="benefits-grid">
-          <div class="benefit-card">
-            <div class="benefit-number">14 Lakh+</div>
-            <div class="benefit-label">Seller Community</div>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-number">24×7</div>
-            <div class="benefit-label">Online Business</div>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-number">7</div>
-            <div class="benefit-label">Days Payment</div>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-number">19000+</div>
-            <div class="benefit-label">Pincodes Served</div>
-          </div>
-        </div>
-
-        <!-- Why Sell Section -->
-        <div class="why-section">
-          <h2>Why do sellers love selling on zaki?</h2>
-          <p>
-            45 crore+ customers across India trust zaki to be their number 1 online shopping destination. We inspire 4 million+ sellers to trust their products to be made available 24×7 on zaki.
-          </p>
-
-          <div class="seller-features">
-            <div class="feature">
-              <div class="feature-icon">🚀</div>
-              <div class="feature-text">
-                <h3>Easy Setup</h3>
-                <p>Register and start selling in minutes with our simple setup process</p>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-icon">📦</div>
-              <div class="feature-text">
-                <h3>Wide Reach</h3>
-                <p>Access millions of customers across all of India instantly</p>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-icon">💰</div>
-              <div class="feature-text">
-                <h3>Low Commission</h3>
-                <p>Competitive commission rates and fast payment settlements</p>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-icon">📊</div>
-              <div class="feature-text">
-                <h3>Analytics</h3>
-                <p>Track your sales and performance with detailed analytics</p>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-icon">🛡️</div>
-              <div class="feature-text">
-                <h3>Seller Protection</h3>
-                <p>Safe and secure payment processing for all transactions</p>
-              </div>
-            </div>
-            <div class="feature">
-              <div class="feature-icon">🎯</div>
-              <div class="feature-text">
-                <h3>Marketing Support</h3>
-                <p>Tools and campaigns to boost your product visibility</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CTA Section -->
-        <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, #2874f0 0%, #174ea6 100%); border-radius: 8px; color: white;">
-          <h2 style="margin: 0 0 16px; font-size: 2rem;">Ready to start selling?</h2>
-          <p style="margin: 0 0 24px; font-size: 1.1rem;">Join thousands of successful sellers on zaki</p>
-          <button class="seller-start" style="padding: 14px 32px; font-size: 1.05rem; background: #ffb703; color: #174ea6;" onclick="window.location.href='/seller/register/'">Create Your Account Now →</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Original Registration Form Container (Hidden) -->
-    <div class="seller-container" style="display: none;">
+    <div class="seller-container">
       <!-- Left Side: Registration Form -->
       <div class="seller-left">
+        <a href="/seller/" style="color: #2874f0; font-weight: 800; margin-bottom: 20px; text-decoration: none;">← Back</a>
+
         <div class="seller-logo">
           <div class="seller-logo-mark">z</div>
           <span>zaki</span>
