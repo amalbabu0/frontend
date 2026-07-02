@@ -46,7 +46,10 @@ For Vercel production, set `VITE_API_BASE_URL` to the deployed backend URL. Razo
 
 ## Supabase Tables
 
-Run `supabase/user_carts.sql` in the Supabase SQL editor to persist carts across devices for the same signed-in user.
+Run these files in the Supabase SQL editor:
+
+- `supabase/user_carts.sql` persists carts across devices for the same signed-in user.
+- `supabase/user_delivery_addresses.sql` persists delivery address details across devices.
 
 ## Run
 

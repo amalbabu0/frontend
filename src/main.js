@@ -12,6 +12,7 @@ const monitoringPages = new Set();
 const retiredModulePathPattern = /^\/(owner|admin|development)\//;
 const deliveryAddressLegacyKey = "zakiDeliveryAddress";
 const cartDbTable = "user_carts";
+const deliveryAddressDbTable = "user_delivery_addresses";
 
 const state = {
   authReady: false,
@@ -26,6 +27,7 @@ const state = {
   cache: null,
   health: null,
   productCache: null,
+  deliveryAddress: null,
   paymentAddressEdit: new URLSearchParams(window.location.search).get("step") === "address",
   message: "",
   messageType: "info",
@@ -640,6 +642,120 @@ async function writeCartToBackend(items) {
   return normalizeCartItems(data.cart || items);
 }
 
+function normalizePaymentAddress(address = {}) {
+  return {
+    fullName: String(address.fullName || address.full_name || "").trim(),
+    phone: String(address.phone || "").trim(),
+    address: String(address.address || "").trim(),
+    pincode: String(address.pincode || "").trim(),
+    city: String(address.city || "").trim(),
+    state: String(address.state || "").trim()
+  };
+}
+
+function hasPaymentAddressValue(address = {}) {
+  return Object.values(normalizePaymentAddress(address)).some(Boolean);
+}
+
+function paymentAddressDbPayload(address) {
+  const normalized = normalizePaymentAddress(address);
+  return {
+    user_id: currentUserId(),
+    full_name: normalized.fullName,
+    phone: normalized.phone,
+    address: normalized.address,
+    pincode: normalized.pincode,
+    city: normalized.city,
+    state: normalized.state,
+    updated_at: new Date().toISOString()
+  };
+}
+
+function paymentAddressFromDb(row) {
+  return normalizePaymentAddress({
+    fullName: row?.full_name,
+    phone: row?.phone,
+    address: row?.address,
+    pincode: row?.pincode,
+    city: row?.city,
+    state: row?.state
+  });
+}
+
+function canUseDeliveryAddressDb() {
+  return Boolean(supabase && currentUserId());
+}
+
+async function readPaymentAddressFromDb() {
+  if (!canUseDeliveryAddressDb()) {
+    return { ok: false, error: new Error("Supabase delivery address DB is not configured.") };
+  }
+
+  const { data, error } = await supabase
+    .from(deliveryAddressDbTable)
+    .select("full_name, phone, address, pincode, city, state")
+    .eq("user_id", currentUserId())
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, error };
+  }
+
+  return {
+    ok: true,
+    exists: Boolean(data),
+    address: data ? paymentAddressFromDb(data) : {}
+  };
+}
+
+async function writePaymentAddressToDb(address) {
+  if (!canUseDeliveryAddressDb()) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from(deliveryAddressDbTable)
+    .upsert(paymentAddressDbPayload(address), { onConflict: "user_id" });
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function loadPaymentAddress() {
+  if (!isSignedIn()) {
+    state.deliveryAddress = null;
+    return;
+  }
+
+  const fallbackAddress = localPaymentAddress();
+  const dbResult = await readPaymentAddressFromDb();
+  if (dbResult.ok && dbResult.exists) {
+    state.deliveryAddress = dbResult.address;
+    savePaymentAddress(dbResult.address);
+    render();
+    return;
+  }
+
+  state.deliveryAddress = fallbackAddress;
+  if (dbResult.ok && isPaymentAddressComplete(fallbackAddress)) {
+    writePaymentAddressToDb(fallbackAddress).catch(() => {});
+  }
+  render();
+}
+
+async function persistPaymentAddress(address) {
+  const normalized = normalizePaymentAddress(address);
+  state.deliveryAddress = normalized;
+  savePaymentAddress(normalized);
+  try {
+    await writePaymentAddressToDb(normalized);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function loadProducts() {
   state.loading.products = true;
   render();
@@ -768,7 +884,7 @@ async function loadPageData() {
 
   if (page === "publicCart") {
     if (isSignedIn()) {
-      await Promise.all([loadProducts(), loadCart(), loadCache()]);
+      await Promise.all([loadProducts(), loadCart(), loadPaymentAddress(), loadCache()]);
       return;
     }
     await loadProducts();
@@ -780,7 +896,7 @@ async function loadPageData() {
   }
 
   if (page === "cart" || page === "payment") {
-    await Promise.all([loadProducts(), loadCart(), loadCache()]);
+    await Promise.all([loadProducts(), loadCart(), loadPaymentAddress(), loadCache()]);
   }
   if (page === "orders") {
     await Promise.all([loadOrders(), loadCache()]);
@@ -1215,7 +1331,7 @@ async function submitPaymentAddress(form) {
 
   const formData = new FormData(form);
   const address = Object.fromEntries(formData.entries());
-  savePaymentAddress(address);
+  await persistPaymentAddress(address);
 
   if (state.paymentAddressEdit) {
     window.location.href = "/cart/";
@@ -1235,6 +1351,7 @@ async function signOut() {
   state.orders = [];
   state.cache = null;
   state.health = null;
+  state.deliveryAddress = null;
   window.location.href = "/login/";
 }
 
@@ -2014,24 +2131,25 @@ function parseStoredAddress(value) {
 }
 
 function savePaymentAddress(address) {
+  const normalized = normalizePaymentAddress(address);
   try {
-    localStorage.setItem(deliveryAddressStorageKey(), JSON.stringify(address));
+    localStorage.setItem(deliveryAddressStorageKey(), JSON.stringify(normalized));
     sessionStorage.removeItem(deliveryAddressLegacyKey);
   } catch {
     try {
-      sessionStorage.setItem(deliveryAddressLegacyKey, JSON.stringify(address));
+      sessionStorage.setItem(deliveryAddressLegacyKey, JSON.stringify(normalized));
     } catch {
       // Storage can be unavailable in stricter browser modes; checkout can still continue.
     }
   }
 }
 
-function savedPaymentAddress() {
+function localPaymentAddress() {
   const storageKey = deliveryAddressStorageKey();
 
   try {
-    const savedAddress = parseStoredAddress(localStorage.getItem(storageKey));
-    if (Object.keys(savedAddress).length) {
+    const savedAddress = normalizePaymentAddress(parseStoredAddress(localStorage.getItem(storageKey)));
+    if (hasPaymentAddressValue(savedAddress)) {
       return savedAddress;
     }
   } catch {
@@ -2039,8 +2157,8 @@ function savedPaymentAddress() {
   }
 
   try {
-    const legacyAddress = parseStoredAddress(sessionStorage.getItem(deliveryAddressLegacyKey));
-    if (Object.keys(legacyAddress).length) {
+    const legacyAddress = normalizePaymentAddress(parseStoredAddress(sessionStorage.getItem(deliveryAddressLegacyKey)));
+    if (hasPaymentAddressValue(legacyAddress)) {
       savePaymentAddress(legacyAddress);
       return legacyAddress;
     }
@@ -2049,6 +2167,14 @@ function savedPaymentAddress() {
   }
 
   return {};
+}
+
+function savedPaymentAddress() {
+  const loadedAddress = normalizePaymentAddress(state.deliveryAddress || {});
+  if (isPaymentAddressComplete(loadedAddress)) {
+    return loadedAddress;
+  }
+  return localPaymentAddress();
 }
 
 function renderPaymentSummaryItem(item) {
