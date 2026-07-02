@@ -577,7 +577,7 @@ function categories() {
 }
 
 function productById(productId) {
-  return catalogProducts().find((product) => product.id === productId);
+  return catalogProducts().find((product) => product.id === productId || product.sellerProductId === productId);
 }
 
 function mergeCatalogProducts(baseProducts = [], sellerProducts = []) {
@@ -764,6 +764,9 @@ function visibleOrders() {
 function cartPayload(items = state.cart) {
   return items.map((item) => ({
     productId: item.productId,
+    sellerProductId: item.sellerProductId || "",
+    name: item.name,
+    pricePaise: item.pricePaise,
     quantity: item.quantity
   }));
 }
@@ -774,6 +777,7 @@ function normalizeCartItem(item) {
   const pricePaise = Number(product?.pricePaise ?? item?.pricePaise ?? 0);
   return {
     productId: product?.id || item?.productId,
+    sellerProductId: product?.sellerProductId || item?.sellerProductId || "",
     name: product?.name || item?.name || item?.productId || "Product",
     pricePaise,
     quantity,
@@ -1493,7 +1497,8 @@ async function loadHealth() {
 async function loadPageData() {
   if (page === "home") {
     if (isSignedIn()) {
-      await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
+      await loadProducts();
+      await Promise.all([loadCart(), loadOrders(), loadCache()]);
       return;
     }
     await loadProducts();
@@ -1502,7 +1507,8 @@ async function loadPageData() {
 
   if (page === "categories" || page === "product") {
     if (isSignedIn()) {
-      await Promise.all([loadProducts(), loadCart(), loadCache()]);
+      await loadProducts();
+      await Promise.all([loadCart(), loadCache()]);
       return;
     }
     await loadProducts();
@@ -1515,7 +1521,8 @@ async function loadPageData() {
 
   if (page === "publicCart") {
     if (isSignedIn()) {
-      await Promise.all([loadProducts(), loadCart(), loadPaymentAddress(), loadCache()]);
+      await loadProducts();
+      await Promise.all([loadCart(), loadPaymentAddress(), loadCache()]);
       return;
     }
     await loadProducts();
@@ -1527,7 +1534,8 @@ async function loadPageData() {
   }
 
   if (page === "cart" || page === "orderSummary" || page === "payment") {
-    await Promise.all([loadProducts(), loadCart(), loadPaymentAddress(), loadCache()]);
+    await loadProducts();
+    await Promise.all([loadCart(), loadPaymentAddress(), loadCache()]);
   }
   if (page === "orders") {
     await Promise.all([loadOrders(), loadCache()]);
@@ -1550,10 +1558,12 @@ async function loadPageData() {
     }
   }
   if (page === "cache" || page === "user" || page === "owner" || page === "admin") {
-    await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache()]);
+    await loadProducts();
+    await Promise.all([loadCart(), loadOrders(), loadCache()]);
   }
   if (monitoringPages.has(page)) {
-    await Promise.all([loadProducts(), loadCart(), loadOrders(), loadCache(), loadHealth()]);
+    await loadProducts();
+    await Promise.all([loadCart(), loadOrders(), loadCache(), loadHealth()]);
   }
 }
 
@@ -1602,6 +1612,7 @@ function cartWithAddedProduct(productId) {
         ...state.cart,
         {
           productId: product.id,
+          sellerProductId: product.sellerProductId || "",
           name: product.name,
           pricePaise: product.pricePaise,
           quantity: 1,
