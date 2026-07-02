@@ -31,6 +31,10 @@
       "destination": "/seller/orders/index.html"
     },
     {
+      "source": "/seller/account",
+      "destination": "/seller/account/index.html"
+    },
+    {
       "source": "/cart",
       "destination": "/cart/index.html"
     },

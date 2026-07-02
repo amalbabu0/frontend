@@ -18,6 +18,7 @@ export default defineConfig({
         sellerRegister: htmlEntry("./seller/register/index.html"),
         sellerProducts: htmlEntry("./seller/products/index.html"),
         sellerOrders: htmlEntry("./seller/orders/index.html"),
+        sellerAccount: htmlEntry("./seller/account/index.html"),
         publicCart: htmlEntry("./cart/index.html"),
         orderSummary: htmlEntry("./cart/summary/index.html"),
         login: htmlEntry("./login/index.html"),
