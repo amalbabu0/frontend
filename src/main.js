@@ -2243,9 +2243,10 @@ function renderFilledCartItem(item) {
       </div>
       <div class="filled-cart-meta">
         <div class="filled-cart-qty" aria-label="Quantity for ${escapeHtml(item.name)}">
-          <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="-1" aria-label="Decrease quantity">-</button>
-          <span>Qty: ${escapeHtml(quantity)}</span>
-          <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="1" aria-label="Increase quantity">+</button>
+          <button class="filled-cart-qty-select" type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="1" aria-label="Increase quantity for ${escapeHtml(item.name)}">
+            <span>Qty: ${escapeHtml(quantity)}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+          </button>
         </div>
         <p>Delivery by ${escapeHtml(product.delivery || "Wed Jul 8")}</p>
       </div>
@@ -2254,11 +2255,31 @@ function renderFilledCartItem(item) {
         <a href="${escapeHtml(productDetailHref(product))}">Know more</a>
       </div>
       <div class="filled-cart-actions">
-        <button type="button">Save for later</button>
-        <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(-quantity)}">Remove</button>
-        <button type="button" data-action="continue-payment">Buy this now</button>
+        <button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>Save for later</button>
+        <button type="button" data-action="quantity" data-product-id="${escapeHtml(item.productId)}" data-direction="${escapeHtml(-quantity)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"/><path d="M9 7V5h6v2"/><path d="M9 10v8M15 10v8"/><path d="M8 7l1 14h6l1-14"/></svg>Remove</button>
+        <button type="button" data-action="go-payment"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 4-6 9h5l-1 7 6-10h-5z"/></svg>Buy this now</button>
       </div>
     </article>
+  `;
+}
+
+function renderCartAddressStrip() {
+  return `
+    <section class="cart-address-strip">
+      <span>From Saved Addresses</span>
+      <a href="/payment/?step=address">Enter Delivery Pincode</a>
+    </section>
+  `;
+}
+
+function renderCartSecureNote() {
+  return `
+    <section class="cart-secure-note" aria-label="Secure payment note">
+      <span aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4-2.4 7.4-6 9.3-3.6-1.9-6-5.3-6-9.3V6z"/><path d="m9.5 12.2 1.8 1.8 3.4-4"/></svg>
+      </span>
+      <p>Safe and secure payments. Easy returns.<br>100% Authentic products.</p>
+    </section>
   `;
 }
 
@@ -2318,13 +2339,11 @@ function renderCartDeliveryAddress(address) {
 
 function renderFilledCartPage() {
   const summary = cartPriceSummary();
-  const address = savedPaymentAddress();
   return `
-    <main class="clone-page public-cart-page filled-cart-page order-summary-page">
-      ${renderCloneBackBar("Order Summary")}
-      ${renderOrderSummaryProgress(address)}
+    <main class="clone-page public-cart-page filled-cart-page">
+      ${renderCloneBackBar("My Cart")}
+      ${renderCartAddressStrip()}
       ${renderMessage()}
-      ${renderCartDeliveryAddress(address)}
 
       <section class="filled-cart-list" aria-label="Cart items">
         ${state.cart.map(renderFilledCartItem).join("")}
@@ -2344,14 +2363,17 @@ function renderFilledCartPage() {
         <p class="cart-save-note">You'll save ${formatMoney(summary.savedPaise)} on this order!</p>
       </section>
 
+      ${renderCartSecureNote()}
+
       <div class="cart-order-bar">
         <div>
           <s>${formatMoney(summary.pricePaise)}</s>
           <strong>${formatMoney(summary.totalPaise)}</strong>
         </div>
-        <button type="button" data-action="continue-payment" ${state.loading.action === "payment" ? "disabled" : ""}>Continue</button>
+        <button type="button" data-action="go-payment">Place Order</button>
       </div>
     </main>
+    ${renderBottomNav()}
   `;
 }
 
