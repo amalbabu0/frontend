@@ -14,6 +14,7 @@ export default defineConfig({
         categories: htmlEntry("./categories/index.html"),
         account: htmlEntry("./account/index.html"),
         accountDevices: htmlEntry("./account/devices/index.html"),
+        accountBecomeSeller: htmlEntry("./account/become-seller/index.html"),
         publicCart: htmlEntry("./cart/index.html"),
         orderSummary: htmlEntry("./cart/summary/index.html"),
         login: htmlEntry("./login/index.html"),

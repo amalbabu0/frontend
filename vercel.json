@@ -11,6 +11,10 @@
       "destination": "/account/devices/index.html"
     },
     {
+      "source": "/account/become-seller",
+      "destination": "/account/become-seller/index.html"
+    },
+    {
       "source": "/cart",
       "destination": "/cart/index.html"
     },
