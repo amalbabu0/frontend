@@ -1567,10 +1567,11 @@ async function continuePayment() {
   state.loading.action = "payment";
   render();
   try {
-    const paymentItems = mode === "cart" ? await writeCartToBackend(state.cart) : normalizeCartItems(items);
+    const paymentItems = normalizeCartItems(items);
     if (mode === "cart") {
       state.cart = paymentItems;
-      writeCartToDb(state.cart).catch(() => {});
+      writeCartToBackend(paymentItems).catch(() => {});
+      writeCartToDb(paymentItems).catch(() => {});
     }
     await startRazorpayPayment(address, paymentItems, mode);
   } catch (error) {
