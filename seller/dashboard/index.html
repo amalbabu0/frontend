@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Seller Dashboard - Manage your store on zaki">
+    <title>Seller Dashboard - zaki</title>
+  </head>
+  <body data-page="sellerDashboard">
+    <div id="app" class="app-root">
+      <main class="boot-shell">
+        <section class="boot-panel" aria-live="polite">
+          <div class="brand-mark">z</div>
+          <div><h1>zaki</h1><p>Loading seller dashboard.</p></div>
+        </section>
+      </main>
+    </div>
+    <noscript>This ecommerce app needs JavaScript enabled.</noscript>
+    <script type="module">
+      import '/src/app.css';
+
+      const app = document.querySelector('#app');
+      const sellerData = JSON.parse(localStorage.getItem('sellerRegistration') || '{}');
+
+      if (!sellerData.email) {
+        window.location.href = '/seller/';
+        throw new Error('Not registered');
+      }
+
+      const state = {
+        seller: sellerData,
+        products: [],
+        orders: [],
+        stats: {
+          totalProducts: 0,
+          totalOrders: 0,
+          totalRevenue: 0,
+          activeListings: 0
+        },
+        currentTab: 'overview'
+      };
+
+      function renderHeader() {
+        return `
+          <header style="background: var(--blue); color: white; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h1 style="margin: 0; font-size: 1.25rem; font-weight: 900; display: flex; align-items: center; gap: 10px;">
+              <span style="background: var(--yellow); color: var(--blue-dark); width: 32px; height: 32px; border-radius: 6px; display: grid; place-items: center; font-weight: 900;">z</span>
+              zaki Seller
+            </h1>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 0.9rem; font-weight: 800;">${sellerData.storeName || 'Store'}</span>
+              <button onclick="logout()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 800; font-size: 0.85rem;">Logout</button>
+            </div>
+          </header>
+        `;
+      }
+
+      function renderNav() {
+        return `
+          <nav style="background: white; border-bottom: 1px solid var(--line); padding: 0; display: flex; gap: 0; sticky-position: 56px; z-index: 19;">
+            <button onclick="setTab('overview')" style="background: ${state.currentTab === 'overview' ? 'var(--blue)' : 'white'}; color: ${state.currentTab === 'overview' ? 'white' : 'var(--muted)'}; border: none; padding: 14px 20px; cursor: pointer; font-weight: 800; flex: 1; border-bottom: 3px solid ${state.currentTab === 'overview' ? 'var(--blue)' : 'transparent'};">📊 Overview</button>
+            <button onclick="setTab('products')" style="background: ${state.currentTab === 'products' ? 'var(--blue)' : 'white'}; color: ${state.currentTab === 'products' ? 'white' : 'var(--muted)'}; border: none; padding: 14px 20px; cursor: pointer; font-weight: 800; flex: 1; border-bottom: 3px solid ${state.currentTab === 'products' ? 'var(--blue)' : 'transparent'};">📦 Products</button>
+            <button onclick="setTab('orders')" style="background: ${state.currentTab === 'orders' ? 'var(--blue)' : 'white'}; color: ${state.currentTab === 'orders' ? 'white' : 'var(--muted)'}; border: none; padding: 14px 20px; cursor: pointer; font-weight: 800; flex: 1; border-bottom: 3px solid ${state.currentTab === 'orders' ? 'var(--blue)' : 'transparent'};">📋 Orders</button>
+            <button onclick="setTab('settings')" style="background: ${state.currentTab === 'settings' ? 'var(--blue)' : 'white'}; color: ${state.currentTab === 'settings' ? 'white' : 'var(--muted)'}; border: none; padding: 14px 20px; cursor: pointer; font-weight: 800; flex: 1; border-bottom: 3px solid ${state.currentTab === 'settings' ? 'var(--blue)' : 'transparent'};">⚙️ Settings</button>
+          </nav>
+        `;
+      }
+
+      function renderOverview() {
+        return `
+          <main style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+            <h2 style="margin: 0 0 20px; font-size: 1.5rem; font-weight: 900;">Welcome back, ${sellerData.storeName}!</h2>
+
+            <!-- Stats Grid -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 8px;">Total Products</div>
+                <div style="font-size: 2rem; font-weight: 900; color: var(--blue);">${state.stats.totalProducts}</div>
+              </div>
+              <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 8px;">Active Listings</div>
+                <div style="font-size: 2rem; font-weight: 900; color: var(--green);">${state.stats.activeListings}</div>
+              </div>
+              <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 8px;">Total Orders</div>
+                <div style="font-size: 2rem; font-weight: 900; color: var(--orange);">${state.stats.totalOrders}</div>
+              </div>
+              <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 8px;">Total Revenue</div>
+                <div style="font-size: 2rem; font-weight: 900; color: var(--green);">₹${state.stats.totalRevenue}</div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 24px;">
+              <h3 style="margin: 0 0 16px; font-weight: 900;">Quick Actions</h3>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                <button onclick="setTab('products')" style="padding: 12px; background: var(--blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 800;">+ Add Product</button>
+                <button onclick="alert('Feature coming soon!')" style="padding: 12px; background: var(--yellow); color: var(--ink); border: none; border-radius: 6px; cursor: pointer; font-weight: 800;">View Performance</button>
+                <button onclick="setTab('settings')" style="padding: 12px; background: var(--soft); color: var(--ink); border: none; border-radius: 6px; cursor: pointer; font-weight: 800;">Store Settings</button>
+              </div>
+            </div>
+
+            <!-- Store Info -->
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line);">
+              <h3 style="margin: 0 0 16px; font-weight: 900;">Store Information</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                  <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 4px;">Store Name</div>
+                  <div style="font-weight: 800; font-size: 1.1rem;">${sellerData.storeName}</div>
+                </div>
+                <div>
+                  <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 4px;">Category</div>
+                  <div style="font-weight: 800; font-size: 1.1rem; text-transform: capitalize;">${sellerData.category}</div>
+                </div>
+                <div>
+                  <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 4px;">Email</div>
+                  <div style="font-weight: 800; font-size: 1.1rem;">${sellerData.email}</div>
+                </div>
+                <div>
+                  <div style="color: var(--muted); font-size: 0.85rem; font-weight: 800; margin-bottom: 4px;">Mobile</div>
+                  <div style="font-weight: 800; font-size: 1.1rem;">+91 ${sellerData.mobile.slice(0,5)}***</div>
+                </div>
+              </div>
+            </div>
+          </main>
+        `;
+      }
+
+      function renderProducts() {
+        return `
+          <main style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h2 style="margin: 0; font-size: 1.5rem; font-weight: 900;">Your Products</h2>
+              <button onclick="alert('Add product feature coming soon!')" style="padding: 10px 20px; background: var(--blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 900;">+ Add New Product</button>
+            </div>
+
+            <div style="background: white; padding: 40px; border-radius: 8px; border: 1px solid var(--line); text-align: center; color: var(--muted);">
+              <div style="font-size: 2rem; margin-bottom: 12px;">📦</div>
+              <p style="margin: 0; font-weight: 800;">No products yet</p>
+              <p style="margin: 8px 0 0; font-size: 0.9rem;">Start adding products to your store</p>
+            </div>
+          </main>
+        `;
+      }
+
+      function renderOrders() {
+        return `
+          <main style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+            <h2 style="margin: 0 0 20px; font-size: 1.5rem; font-weight: 900;">Orders</h2>
+
+            <div style="background: white; padding: 40px; border-radius: 8px; border: 1px solid var(--line); text-align: center; color: var(--muted);">
+              <div style="font-size: 2rem; margin-bottom: 12px;">📋</div>
+              <p style="margin: 0; font-weight: 800;">No orders yet</p>
+              <p style="margin: 8px 0 0; font-size: 0.9rem;">Orders from customers will appear here</p>
+            </div>
+          </main>
+        `;
+      }
+
+      function renderSettings() {
+        return `
+          <main style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+            <h2 style="margin: 0 0 20px; font-size: 1.5rem; font-weight: 900;">Store Settings</h2>
+
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 20px;">
+              <h3 style="margin: 0 0 16px; font-weight: 900;">Profile Settings</h3>
+              <button style="padding: 10px 20px; background: var(--soft); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-weight: 900;">Edit Profile</button>
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 20px;">
+              <h3 style="margin: 0 0 16px; font-weight: 900;">Shipping & Returns</h3>
+              <button style="padding: 10px 20px; background: var(--soft); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-weight: 900;">Configure Shipping</button>
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line);">
+              <h3 style="margin: 0 0 16px; font-weight: 900;">Account Security</h3>
+              <button style="padding: 10px 20px; background: var(--soft); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-weight: 900;">Change Password</button>
+            </div>
+          </main>
+        `;
+      }
+
+      function renderPage() {
+        let content = '';
+        switch(state.currentTab) {
+          case 'overview':
+            content = renderOverview();
+            break;
+          case 'products':
+            content = renderProducts();
+            break;
+          case 'orders':
+            content = renderOrders();
+            break;
+          case 'settings':
+            content = renderSettings();
+            break;
+        }
+
+        app.innerHTML = `
+          ${renderHeader()}
+          ${renderNav()}
+          ${content}
+        `;
+      }
+
+      window.setTab = function(tab) {
+        state.currentTab = tab;
+        renderPage();
+      };
+
+      window.logout = function() {
+        localStorage.removeItem('sellerRegistration');
+        window.location.href = '/seller/';
+      };
+
+      renderPage();
+    </script>
+  </body>
+</html>
