@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Become a Seller - Register as seller on zaki">
+    <title>Become a Seller - zaki</title>
+  </head>
+  <body data-page="becomeSeller">
+    <div id="app" class="app-root">
+      <main class="boot-shell">
+        <section class="boot-panel" aria-live="polite">
+          <div class="brand-mark">z</div>
+          <div><h1>zaki</h1><p>Loading seller registration.</p></div>
+        </section>
+      </main>
+    </div>
+    <noscript>This ecommerce app needs JavaScript enabled.</noscript>
+    <script type="module">
+      import { supabase, hasSupabaseConfig } from '/src/lib/supabase.js';
+      import '/src/app.css';
+
+      const app = document.querySelector('#app');
+
+      const state = {
+        session: null,
+        loading: true,
+        error: null,
+        formData: {
+          storeName: '',
+          category: '',
+          gstNumber: '',
+          description: '',
+          businessType: ''
+        }
+      };
+
+      const categories = [
+        'Electronics',
+        'Fashion & Apparel',
+        'Home & Furniture',
+        'Grocery & Food',
+        'Beauty & Personal Care',
+        'Sports & Outdoors',
+        'Books & Media',
+        'Toys & Games',
+        'Other'
+      ];
+
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(text).replace(/[&<>"']/g, c => map[c]);
+      }
+
+      function renderPage() {
+        const html = `
+          <div style="min-height: 100vh; background: var(--page); padding: 20px 0 80px;">
+            <!-- Header -->
+            <div style="background: white; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px;">
+              <button onclick="window.history.back()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--ink); padding: 0; width: 36px; height: 36px; display: grid; place-items: center;">←</button>
+              <h1 style="margin: 0; font-size: 1.25rem; font-weight: 900; flex: 1;">Become a Seller</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+              <!-- Info Card -->
+              <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <span style="font-size: 1.8rem; flex-shrink: 0;">📦</span>
+                  <div>
+                    <h2 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 900;">Ready to sell on zaki?</h2>
+                    <p style="margin: 0; color: var(--muted); line-height: 1.5; font-size: 0.9rem;">Complete your seller profile and start selling to millions of customers across India.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Registration Form -->
+              <div style="background: white; padding: 24px; border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <form id="sellerForm">
+                  <!-- Store Name -->
+                  <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 900; font-size: 0.9rem;">Store Name <span style="color: var(--red);">*</span></label>
+                    <input type="text" name="storeName" placeholder="Enter your store name" required
+                      style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 6px; font-family: inherit; font-size: 0.95rem;">
+                    <div id="storeNameError" style="color: var(--red); font-size: 0.85rem; margin-top: 4px;"></div>
+                  </div>
+
+                  <!-- Business Type -->
+                  <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 900; font-size: 0.9rem;">Business Type <span style="color: var(--red);">*</span></label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1px solid var(--line); border-radius: 6px;">
+                        <input type="radio" name="businessType" value="individual" required>
+                        <span>Individual</span>
+                      </label>
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px; border: 1px solid var(--line); border-radius: 6px;">
+                        <input type="radio" name="businessType" value="business">
+                        <span>Business</span>
+                      </label>
+                    </div>
+                    <div id="businessTypeError" style="color: var(--red); font-size: 0.85rem; margin-top: 4px;"></div>
+                  </div>
+
+                  <!-- Category -->
+                  <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 900; font-size: 0.9rem;">Category <span style="color: var(--red);">*</span></label>
+                    <select name="category" required
+                      style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 6px; font-family: inherit; font-size: 0.95rem;">
+                      <option value="">Select a category</option>
+                      ${categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                    </select>
+                    <div id="categoryError" style="color: var(--red); font-size: 0.85rem; margin-top: 4px;"></div>
+                  </div>
+
+                  <!-- GST Number -->
+                  <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 900; font-size: 0.9rem;">GST Number <span style="color: var(--muted);">(Optional)</span></label>
+                    <input type="text" name="gstNumber" placeholder="15-digit GST number"
+                      style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 6px; font-family: inherit; font-size: 0.95rem;">
+                    <div id="gstError" style="color: var(--red); font-size: 0.85rem; margin-top: 4px;"></div>
+                  </div>
+
+                  <!-- Description -->
+                  <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 900; font-size: 0.9rem;">Business Description <span style="color: var(--muted);">(Optional)</span></label>
+                    <textarea name="description" placeholder="Tell us about your business..." rows="4"
+                      style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 6px; font-family: inherit; font-size: 0.95rem; resize: vertical;"></textarea>
+                  </div>
+
+                  <!-- Terms -->
+                  <div style="margin-bottom: 20px; padding: 12px; background: var(--soft); border-radius: 6px; font-size: 0.85rem; line-height: 1.5;">
+                    <input type="checkbox" id="agreeTerms" name="agreeTerms" required style="margin-right: 8px; cursor: pointer;">
+                    <label for="agreeTerms" style="cursor: pointer;">
+                      I agree to the seller terms & conditions and understand that my account will be verified before I can start selling.
+                    </label>
+                    <div id="termsError" style="color: var(--red); font-size: 0.85rem; margin-top: 4px;"></div>
+                  </div>
+
+                  <!-- Submit Button -->
+                  <button type="submit" style="width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 900; font-size: 1rem;">
+                    Submit Seller Application
+                  </button>
+
+                  <!-- Error Message -->
+                  <div id="formError" style="color: var(--red); font-size: 0.9rem; margin-top: 12px; text-align: center;"></div>
+                  <div id="formSuccess" style="color: var(--green); font-size: 0.9rem; margin-top: 12px; text-align: center;"></div>
+                </form>
+              </div>
+
+              <!-- Info Section -->
+              <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--line); margin-top: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0 0 16px; font-weight: 900;">What happens next?</h3>
+                <div style="display: grid; gap: 12px; font-size: 0.9rem;">
+                  <div style="display: flex; gap: 12px;">
+                    <span style="font-weight: 900; color: var(--blue); min-width: 24px;">1.</span>
+                    <div>
+                      <strong>Submit Application</strong>
+                      <p style="margin: 4px 0 0; color: var(--muted);">Fill in your business details and submit</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 12px;">
+                    <span style="font-weight: 900; color: var(--blue); min-width: 24px;">2.</span>
+                    <div>
+                      <strong>Verification</strong>
+                      <p style="margin: 4px 0 0; color: var(--muted);">Our team will verify your information (24-48 hours)</p>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 12px;">
+                    <span style="font-weight: 900; color: var(--blue); min-width: 24px;">3.</span>
+                    <div>
+                      <strong>Start Selling</strong>
+                      <p style="margin: 4px 0 0; color: var(--muted);">Once approved, access your seller dashboard</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        app.innerHTML = html;
+
+        // Attach form handler
+        const form = document.getElementById('sellerForm');
+        form.addEventListener('submit', handleFormSubmit);
+      }
+
+      async function handleFormSubmit(e) {
+        e.preventDefault();
+        clearErrors();
+
+        const formData = new FormData(e.target);
+        const data = {
+          storeName: formData.get('storeName'),
+          businessType: formData.get('businessType'),
+          category: formData.get('category'),
+          gstNumber: formData.get('gstNumber'),
+          description: formData.get('description'),
+          agreeTerms: formData.get('agreeTerms'),
+          userEmail: state.session?.user?.email
+        };
+
+        // Validation
+        let isValid = true;
+
+        if (!data.storeName || data.storeName.trim().length < 3) {
+          showError('storeNameError', 'Store name must be at least 3 characters');
+          isValid = false;
+        }
+
+        if (!data.businessType) {
+          showError('businessTypeError', 'Please select a business type');
+          isValid = false;
+        }
+
+        if (!data.category) {
+          showError('categoryError', 'Please select a category');
+          isValid = false;
+        }
+
+        if (data.gstNumber && !/^[0-9]{15}$/.test(data.gstNumber.replace(/[^0-9]/g, ''))) {
+          showError('gstError', 'GST number should be 15 digits');
+          isValid = false;
+        }
+
+        if (!data.agreeTerms) {
+          showError('termsError', 'Please agree to terms and conditions');
+          isValid = false;
+        }
+
+        if (!isValid) return;
+
+        try {
+          const button = e.target.querySelector('button[type="submit"]');
+          button.disabled = true;
+          button.textContent = 'Submitting...';
+
+          // Save seller data
+          localStorage.setItem('sellerApplication', JSON.stringify(data));
+
+          showSuccess('formSuccess', 'Application submitted! Redirecting to your account...');
+
+          setTimeout(() => {
+            window.location.href = '/account/';
+          }, 2000);
+
+        } catch (error) {
+          console.error('Submission error:', error);
+          showError('formError', 'Submission failed. Please try again.');
+        }
+      }
+
+      function showError(elementId, message) {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.textContent = message;
+        }
+      }
+
+      function showSuccess(elementId, message) {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.textContent = message;
+        }
+      }
+
+      function clearErrors() {
+        document.querySelectorAll('[id$="Error"], [id$="Success"]').forEach(el => {
+          el.textContent = '';
+        });
+      }
+
+      async function checkAuth() {
+        if (!hasSupabaseConfig || !supabase) {
+          state.error = 'Supabase not configured';
+          return false;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
+          return false;
+        }
+
+        state.session = session;
+        return true;
+      }
+
+      async function init() {
+        if (!(await checkAuth())) return;
+        state.loading = false;
+        renderPage();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
